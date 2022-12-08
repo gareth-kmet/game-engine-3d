@@ -1,0 +1,13 @@
+1642975456665	Move type
+1642999723692	Rename type 'Entity'
+1642999734778	Rename type 'EntityStorage'
+1643001690068	Change method 'dealWithLargeGenerationPoint'
+1643001707481	Change method 'dealWithMediumGenerationPoint'
+1643001730761	Change method 'dealWithSmallGenerationPoint'
+1643001755297	Change method 'dealWithOtherGenerationPoint'
+1643003422748	Rename field 'mainLoopRequiredVariables'
+1643153893203	Move compilation unit
+1643158865839	Delete element
+1643158886583	Delete element
+1643158911776	Move compilation unit
+1643158916875	Delete element

@@ -1,0 +1,24 @@
+#version 140
+
+in vec2 position;
+
+out vec2 textureCoords[5];
+
+uniform vec2 size;
+
+void main(void){
+
+	gl_Position = vec4(position, 0.0, 1.0);
+	vec2 pos = vec2(position.x * 0.5 + 0.5, position.y * -0.5 + 0.5);
+	float pixelHeight = 1.0/size.y;
+	float pixelWidth = 1.0/size.x;
+	
+	pixelHeight=pixelHeight*1;
+	pixelWidth=pixelWidth*1;
+	
+	textureCoords[0] = pos;
+	textureCoords[1] = pos+vec2(pixelWidth, 0.0);
+	textureCoords[2] = pos+vec2(-pixelWidth, 0.0);
+	textureCoords[3] = pos+vec2(0.0, pixelHeight);
+	textureCoords[4] = pos+vec2(0.0, -pixelHeight);
+}

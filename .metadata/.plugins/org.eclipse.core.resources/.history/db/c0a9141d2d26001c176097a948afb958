@@ -1,0 +1,15 @@
+package game.world;
+
+public class WorldRandomType {
+	
+	
+	
+	
+	public static interface WorldStyles{
+		
+		
+			
+		
+	}
+
+}

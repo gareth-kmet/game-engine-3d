@@ -1,0 +1,22 @@
+1641157276224	Rename field 'xzAbsoluteMovement'
+1641157286926	Rename field 'yRot'
+1641157454331	Rename method 'apply'
+1641174997917	Change method 'collision$NULL'
+1641175025966	Change method 'collision$NULL'
+1641175063541	Change method 'collision$BOUNDING_SPHERE'
+1641175091491	Change method 'collision$BOUNDING_BOX'
+1641175125452	Change method 'collision$SEGMENTED_COLLISION'
+1641175157542	Change method 'collision$Y_ROTATED_BOUNDING_BOX'
+1641175172739	Change method 'collision$BOUNDING_SPHERE'
+1641175203733	Change method 'collision$ROTATED_BOUNDING_BOX'
+1641175479805	Rename local variable 'r1'
+1641175487340	Rename local variable 'r2'
+1641181269084	Change method 'collision$Y_ROTATED_BOUNDING_BOX'
+1641329653768	Rename package 'game.world.gameObjects.Entities'
+1641501191088	Move compilation unit
+1641501397364	Delete element
+1641503084161	Delete element
+1641503451461	Rename type 'CollisionReturnData'
+1641603714416	Move compilation units
+1641606186909	Rename method 'newAstarGrid'
+1641607628615	Rename method 'getEffect'

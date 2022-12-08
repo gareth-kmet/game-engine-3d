@@ -1,0 +1,67 @@
+package game.world.terrain;
+
+import java.util.Arrays;
+
+import org.lwjgl.util.vector.Vector3f;
+
+public abstract class Normals {
+	
+	
+	public static void generateNormals(Terrain t, TerrainModelData data, TerrainGenerator terrains) {
+		
+		int triangleCount = data.indices.length / 3;
+		
+		Vector3f[] normals = new Vector3f[data.vertexCount];
+		for(int i = 0; i<normals.length; i++) {
+			normals[i] = new Vector3f();
+		}
+		
+		for(int i = 0; i<triangleCount; i++) {
+			
+			int triangleIndex = i*3;
+			int vertexIndexA = data.indices[triangleIndex];
+			int vertexIndexB = data.indices[triangleIndex+1];
+			int vertexIndexC = data.indices[triangleIndex+2];
+			
+			Vector3f triangleNormal = surfaceNormalFromIndices(vertexIndexA, vertexIndexB, vertexIndexC, data.vertices);
+			
+			Vector3f aNormal = normals[vertexIndexA];
+			Vector3f.add(aNormal, triangleNormal, aNormal);
+			Vector3f bNormal = normals[vertexIndexB];
+			Vector3f.add(bNormal, triangleNormal, bNormal);
+			Vector3f cNormal = normals[vertexIndexC];
+			Vector3f.add(cNormal, triangleNormal, cNormal);
+			
+		}
+	}
+	
+	public static Vector3f surfaceNormalFromIndices(int indexVA, int indexVB, int indexVC, float[] vertices) {
+		
+		Vector3f pointA = getNormal(indexVA, vertices);
+		Vector3f pointB = getNormal(indexVB, vertices);
+		Vector3f pointC = getNormal(indexVC, vertices);
+		
+		Vector3f sideAB = Vector3f.sub(pointB, pointA, new Vector3f());
+		Vector3f sideAC = Vector3f.sub(pointC, pointA, new Vector3f());
+		
+		Vector3f cross = Vector3f.cross(sideAB, sideAC, new Vector3f());
+		
+		return cross;
+		
+	}
+	
+	public static void setNormal(int vertexIndex, float[] normals, Vector3f normal) {
+		int normalIndex = vertexIndex*3;
+		normals[normalIndex] = normal.x;
+		normals[normalIndex+1] = normal.y;
+		normals[normalIndex+2] = normal.z;
+	}
+	
+	public static Vector3f getNormal(int vertexIndex, float[] normals) {
+		int index = vertexIndex * 3;
+		Vector3f normal = new Vector3f(normals[index], normals[index+1], normals[index+2]);
+		return normal;
+	}
+	
+
+}

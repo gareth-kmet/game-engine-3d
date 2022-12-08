@@ -1,0 +1,34 @@
+package game.world.terrain;
+
+import game.GameLoopManager;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+
+public class TerrainManager implements GameLoopManager {
+	
+	private TerrainGenerator generator;
+
+	@Override
+	public void create() {
+		
+		landStyle = LandHeightStyles.getRandomizedStyle(random);
+		waterStyle = WaterHeightStyles.getRandomizedStyle(random, landStyle);
+		
+		generator = new TerrainGenerator();
+		generator.generate();
+
+	}
+
+	@Override
+	public void update() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void destroy() {
+		// TODO Auto-generated method stub
+
+	}
+
+}

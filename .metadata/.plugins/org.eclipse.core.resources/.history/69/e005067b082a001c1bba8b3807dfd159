@@ -1,0 +1,62 @@
+package mainLoop;
+
+import game.GameManager;
+import mainLoop.main.MainManager;
+import rendering.RenderConditions;
+
+public interface LoopManager {
+
+	/**
+	 * Creates the section
+	 * 
+	 * @return if creation worked
+	 */
+	public boolean create();
+	
+	/**
+	 * Called each step of the loop
+	 * 
+	 */
+	public void loopStep();
+	
+	/**
+	 * Creates the section
+	 * 
+	 * @return boolean that is added with display.closed to run while loop
+	 */
+	public boolean loopBoolean();
+	
+	public void cleanUp();
+	
+	public RenderConditions[] getConditions();
+	
+	public enum Managers{
+		GAME {
+			@Override
+			LoopManager getManagerNewInstant() {
+				return new GameManager();
+			}
+		},
+		
+		;
+		
+		boolean canUseNext = true;
+		
+		abstract LoopManager getManagerNewInstant();
+		
+		public boolean setNextManager() {
+			return setNextManager(this);
+		}
+		
+		public static boolean setNextManager(Managers nextManager) {
+			
+			if(nextManager.canUseNext) {
+				MainLoop.nextManager = nextManager;
+			}
+			
+			return nextManager.canUseNext;
+			
+		}
+	}
+
+}

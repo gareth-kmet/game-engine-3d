@@ -1,0 +1,51 @@
+package game.world.environment.styles;
+
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+
+import game.world.terrain.TerrainModelData;
+import rendering.loaders.Loader;
+
+public interface Environment{
+	
+	public static final int MAX_GL_TEXTURES = 10, MIN_GL_TEXTURE_NUM=10;
+
+	/**
+	 * 
+	 * @param texNum - (0-9)
+	 * @return GL_TEXTURE[10-19]
+	 */
+	public static int getGLTextureConstant(int texNum) {
+		if(texNum < 0 || texNum > 9) {
+			throw new IllegalArgumentException();
+		}
+		return GL13.GL_TEXTURE10+texNum;
+	}
+	
+	public abstract Loader.TEX[] getTextures();
+	public abstract String[] getTextureLocations();
+	public abstract void generateTextureVBO(TerrainModelData terrain);
+	public abstract void init(Loader loader);
+	
+	public static Loader.TEX[] loadTextures(final Environment e, final Loader loader) {
+		final String[] locations = e.getTextureLocations();
+		
+		final int length = Math.min(locations.length, MAX_GL_TEXTURES);
+		
+		final Loader.TEX[] textures = new Loader.TEX[length];
+		
+		for (int i = 0; i < length; i++) {
+			textures[i] = loader.loadGameTexture(locations[i]);
+		}
+		
+		return textures;
+	}
+	
+	public default void bindTextures() {
+		Loader.TEX[] textures = getTextures();
+		for (int i = 0; i < textures.length; i++) {
+			GL13.glActiveTexture(getGLTextureConstant(i));
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, textures[i].id);
+		}
+	}
+}

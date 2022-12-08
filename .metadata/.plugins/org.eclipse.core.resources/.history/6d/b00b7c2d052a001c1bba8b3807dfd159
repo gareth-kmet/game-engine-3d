@@ -1,0 +1,73 @@
+package game.world.terrain;
+
+import java.util.Random;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.WorldLoopManager;
+import game.world.WorldRandomStyles;
+import game.world.environment.styles.EnvironmentStyles;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import mainLoop.MainLoopVariables;
+
+public class TerrainManager implements WorldLoopManager {
+	
+	private TerrainGenerator generator;
+	private LandHeightStyles landStyle;
+	private WaterHeightStyles waterStyle;
+	private FalloutHeightStyles falloutStyle;
+	private EnvironmentStyles environmentStyle;
+	private EnvironmentStyles environment;
+	private final int seed;
+	
+	private Point lastPlayerChunk;
+	
+	public TerrainManager(int seed) {
+		this.seed=seed;
+	}
+
+	@Override
+	public void create(Random random, WorldRandomStyles[] styles) {
+		
+		landStyle = LandHeightStyles.getRandomizedStyle(random);
+		waterStyle = WaterHeightStyles.getRandomizedStyle(random, landStyle);
+		falloutStyle = FalloutHeightStyles.getRandomizedStyle(random, landStyle, waterStyle);
+		
+		generator = new TerrainGenerator(landStyle, waterStyle, falloutStyle, environment);
+		
+		lastPlayerChunk = getPlayerChunk();
+		
+		generator.generate(seed, lastPlayerChunk);
+		generator.updateGeneration();
+		generator.updateWaters(lastPlayerChunk, lastPlayerChunk);
+	}
+
+	@Override
+	public void update() {
+		Point currentPlayerChunk = getPlayerChunk();
+		if(!currentPlayerChunk.equals(lastPlayerChunk)) {
+			generator.generate(seed, currentPlayerChunk);
+			generator.updateWaters(currentPlayerChunk, lastPlayerChunk);
+			lastPlayerChunk = currentPlayerChunk;
+		}
+		generator.updateGeneration();
+	}
+	
+	private Point getPlayerChunk() {
+		Vector3f pos = MainLoopVariables.getPlayer().getPosition();
+		int tx = (int) Math.floor (pos.x / TerrainVariables.SIZE);
+		int tz = (int) Math.floor(pos.z / TerrainVariables.SIZE);
+		return new Point(tx,tz);
+	}
+
+	@Override
+	public void destroy() {
+		// TODO Auto-generated method stub
+
+	}
+
+}

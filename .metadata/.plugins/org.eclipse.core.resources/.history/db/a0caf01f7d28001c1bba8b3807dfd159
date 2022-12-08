@@ -1,0 +1,9 @@
+package game.world.terrain;
+
+import java.util.HashMap;
+
+public class TerrainStorage {
+	
+	final HashMap<Integer, HashMap<Integer, Terrain>> terrains = new HashMap<Integer, HashMap<Integer, Terrain>>();
+
+}

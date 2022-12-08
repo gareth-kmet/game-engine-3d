@@ -1,0 +1,83 @@
+package rendering.terrain;
+
+import java.util.List;
+
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+
+import entities.Camera;
+import entities.Entity;
+import entities.Light;
+import game.world.terrain.Terrain;
+import game.world.terrain.TerrainVariables;
+import rendering.models.RawModel;
+import rendering.models.TexturedModel;
+import rendering.models.textures.ModelTexture;
+import rendering.models.textures.TerrainTexturePack;
+import rendering.skybox.SkyBoxVariables;
+import rendering.skybox.SkyboxRenderer;
+import toolbox.Maths;
+
+public class TerrainRenderer {
+	
+	private TerrainShader shader;
+	
+	public TerrainRenderer(Matrix4f projectionMatrix) {
+		shader=new TerrainShader();
+		shader.start();
+		shader.loadProjectionMatrix(projectionMatrix);
+		shader.connectTextureUnits();
+		shader.stop();
+	}
+	
+	public void render(List<Terrain> terrains, List<Light> lights, Vector4f clipPlane, Camera camera, Matrix4f toShadowSpace) {
+		shader.start();
+		shader.loadClipPlane(clipPlane);
+		shader.loadSkyColour(SkyBoxVariables.Fog.colour);
+		shader.loadLights(lights);
+		shader.loadViewMatrix(camera);
+		
+		shader.loadToShadowSpaceMatrix(toShadowSpace);
+		for(Terrain terrain:terrains) {
+			prepareTerrain(terrain);
+			loadModelMatrix(terrain);
+			GL11.glDrawElements(GL11.GL_TRIANGLES, terrain.getModel().getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
+			unbindTexturedModel();
+		}
+		
+		shader.stop();
+	}
+	
+	private void prepareTerrain(Terrain terrain) {
+		RawModel model = terrain.getModel();
+		GL30.glBindVertexArray(model.getVaoID());
+		GL20.glEnableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+		shader.loadShineVariables(1,0);
+		
+	}
+	
+	private void unbindTexturedModel() {
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+		GL30.glBindVertexArray(0);
+	}
+	
+	private void loadModelMatrix(Terrain terrain) {
+		Matrix4f transformationMatrix = Maths.createTransformationMatrix(terrain.getModelMatrixPos(),
+				0,0,0,1);
+		shader.loadTransformationMatrix(transformationMatrix);
+	}
+	
+	public void cleanUp() {
+		shader.cleanUp();
+	}
+
+}

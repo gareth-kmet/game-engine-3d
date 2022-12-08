@@ -1,0 +1,48 @@
+package game.world;
+
+import java.util.ArrayList;
+
+public class WorldLoaderThread extends Thread{
+	
+	ArrayList<Request> requests = new ArrayList<Request>();
+	boolean stop=false;
+	
+	@Override
+	public synchronized void start() {
+		stop=false;
+		super.start();
+	}
+	
+	@Override
+	public void run() {
+		while(!stop) {
+			if(requests.isEmpty()) {
+				Thread.yield();
+				continue;
+			}
+			runRequest();
+		}
+	}
+	
+	private void runRequest() {
+		Request request = requests.get(0);
+		if(request.complete) {
+			requests.remove(0);
+			return;
+		}
+		request.run();
+		request.complete=true;
+	
+	}
+	
+	
+	public static abstract class Request {
+		
+		boolean complete;
+		
+		protected abstract void run();
+
+	}
+
+
+}

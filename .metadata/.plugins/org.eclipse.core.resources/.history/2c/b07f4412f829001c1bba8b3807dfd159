@@ -1,0 +1,27 @@
+package game.world.environment.styles;
+
+import game.world.environment.styles.EnvironmentStyles.Environment;
+import game.world.terrain.TerrainModelData;
+import rendering.loaders.Loader;
+
+public class NormalEnvironmnet extends Environment {
+
+	@Override
+	public void loadTextures(Loader loader) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void activateTextures() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void findTextures(TerrainModelData terrain) {
+		// TODO Auto-generated method stub
+
+	}
+
+}

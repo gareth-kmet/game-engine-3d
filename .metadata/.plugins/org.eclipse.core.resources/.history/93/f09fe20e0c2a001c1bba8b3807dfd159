@@ -1,0 +1,34 @@
+package game.world.environment.styles;
+
+import org.lwjgl.opengl.GL13;
+
+import game.world.terrain.TerrainModelData;
+import rendering.loaders.Loader;
+
+public interface Environment{
+	
+	public static final int MAX_GL_TEXTURES = 10, MIN_GL_TEXTURE_NUM=10;
+
+	/**
+	 * 
+	 * @param texNum - (0-9)
+	 * @return GL_TEXTURE[10-19]
+	 */
+	public static int getGLTextureConstant(int texNum) {
+		if(texNum < 0 || texNum > 9) {
+			throw new IllegalArgumentException();
+		}
+		return GL13.GL_TEXTURE10+texNum;
+	}
+	
+	public abstract void loadTextures(Loader loader);
+	public abstract Loader.TEX[] getTextures();
+	public abstract void findTextures(TerrainModelData terrain);
+	
+	public default void bindTextures() {
+		
+		for (int i = 0; i < getTextures().length; i++) {
+			
+		}
+	}
+}

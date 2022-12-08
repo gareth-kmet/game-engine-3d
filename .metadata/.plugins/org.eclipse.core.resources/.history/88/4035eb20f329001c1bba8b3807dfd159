@@ -1,0 +1,14 @@
+package game.world.environment;
+
+import game.world.terrain.heights.LandHeightStyles;
+
+public enum EnvironmentStyles {
+
+	
+	
+	;
+	
+	public static EnvironmentStyles getRandomizedStyle(LandHeightStyles landStyle) {
+		return values()[0];
+	}
+}

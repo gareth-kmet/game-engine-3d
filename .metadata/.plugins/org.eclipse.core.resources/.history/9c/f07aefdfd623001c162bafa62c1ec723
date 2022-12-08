@@ -1,0 +1,65 @@
+package game.world.terrain;
+
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import rendering.models.RawModel;
+import toolbox.Maths;
+
+public class Terrain {
+	
+	private final RawModel model;
+	private final int size, vertexCount;
+	private final float[][] heights;
+	final int x, z;
+	final Vector2f position2d;
+	final Vector3f position3d;
+	
+	Terrain(RawModel model, int size, int vertexCount, float[] heights[], int x, int z){
+		this.model=model;
+		this.size=size;
+		this.vertexCount=vertexCount;
+		this.heights = heights;
+		this.x = x; this.z=z;
+		position2d = new Vector2f(x,z);
+		position3d = new Vector2d(x,0,z);
+	}
+	
+	public float getHeightOfTerrain(float worldX, float worldZ) {
+		float terrainX = worldX;
+		float terrainZ = worldZ;
+		float gridSquareSize = size/((float)heights.length - 1);
+		int gridX = (int) Math.floor(terrainX / gridSquareSize);
+		int gridZ = (int) Math.floor(terrainZ / gridSquareSize);
+		
+		if(gridX >=heights.length-1 || gridZ >= heights.length-1 || gridX<0 || gridZ<0) {
+			return 0;
+		}
+		float xCoord = (terrainX % gridSquareSize)/gridSquareSize;
+		float zCoord = (terrainZ % gridSquareSize)/gridSquareSize;
+		float answer;
+		if (xCoord <= (1-zCoord)) {
+			answer = Maths.barryCentric(new Vector3f(0, heights[gridX][gridZ], 0), new Vector3f(1,
+							heights[gridX + 1][gridZ], 0), new Vector3f(0,
+							heights[gridX][gridZ + 1], 1), new Vector2f(xCoord, zCoord));
+		} else {
+			answer = Maths.barryCentric(new Vector3f(1, heights[gridX + 1][gridZ], 0), new Vector3f(1,
+							heights[gridX + 1][gridZ + 1], 1), new Vector3f(0,
+							heights[gridX][gridZ + 1], 1), new Vector2f(xCoord, zCoord));
+		}
+		return answer;
+		
+	}
+	
+	public RawModel getModel() {
+		return model;
+	}
+	
+	public Vector2f getPosition() {
+		return position2d;
+	}
+	public Vector3f getPosition3d() {
+		return position3d;
+	}
+
+}

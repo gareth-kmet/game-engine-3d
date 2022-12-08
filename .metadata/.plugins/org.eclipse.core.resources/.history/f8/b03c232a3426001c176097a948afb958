@@ -1,0 +1,32 @@
+package game.world;
+
+import java.util.Random;
+
+import game.world.terrain.LandHeightStyles;
+
+public class WorldRandomStyles {
+	
+	private Random random = new Random();
+	
+	public enum Styles implements WorldStyles{
+		LAND_HEIGHT {
+			@Override
+			public WorldStyles getRandomizedStyle(Styles styles) {
+				return LandHeightStyles.getRandomizedStyle();
+			}
+		},
+		WATER_DEPTH,
+		;
+
+		@Override
+		public abstract WorldStyles getRandomizedStyle(Styles styles);
+	
+	}
+	
+	public static interface WorldStyles{
+		
+		public WorldStyles getRandomizedStyle(Styles... styles);
+		
+	}
+
+}

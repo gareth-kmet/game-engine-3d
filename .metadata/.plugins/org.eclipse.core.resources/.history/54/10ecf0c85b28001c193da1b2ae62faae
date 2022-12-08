@@ -1,0 +1,93 @@
+package game;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import entities.Camera;
+import entities.Entity;
+import entities.Light;
+import entities.Player;
+import game.world.WorldManager;
+import mainLoop.LoopManager;
+import mainLoop.MainLoop;
+import mainLoop.MainLoopVariables;
+import rendering.MasterRenderer;
+import rendering.font.FontType;
+import rendering.font.GUIText;
+import rendering.guis.GuiTexture;
+import rendering.loaders.Loader;
+import rendering.loaders.ObjLoader;
+import rendering.models.TexturedModel;
+import rendering.models.textures.ModelTexture;
+import rendering.models.textures.TerrainTexture;
+import rendering.models.textures.TerrainTexturePack;
+import rendering.particles.ComplexParticleSystem;
+import rendering.particles.ParticleMaster;
+import rendering.particles.ParticleTexture;
+import rendering.water.WaterRenderer;
+import rendering.water.WaterTile;
+import toolbox.MousePicker;
+
+public final class GameManager implements LoopManager{
+	
+	private WorldManager world;
+	
+
+	@Override
+	public boolean create() {
+		
+		Loader loader = MainLoopVariables.getLoader();
+		
+		world = new WorldManager();
+		world.create();
+		
+		
+		FontType font = new FontType(loader.loadFontTexture("font/candara"), new File(Loader.RES_LOCATION+"/font/candara.fnt"));
+		GUIText text = new GUIText("A sample string of text!", 1, font, new Vector2f(0.0f,0.0f), 1f, true);
+		text.setColour(0.1f, 0.1f, 0.1f);
+		
+		
+		return false;
+	}
+
+	private boolean keyDownA = false;
+	
+	@Override
+	public void loopStep() {
+		MainLoopVariables.getPlayer().move();
+		MainLoopVariables.getCamera().move();
+		
+		if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+			if(!keyDownA) {
+				Mouse.setGrabbed(!Mouse.isGrabbed());
+			}
+			keyDownA=true;
+		}else {
+			keyDownA=false;
+		}
+		
+		world.update();
+		
+	}
+
+	@Override
+	public boolean loopBoolean() {
+		return true;
+	}
+
+	@Override
+	public void cleanUp() {
+		if(world!=null)world.destroy();
+		
+	}
+	
+	
+
+}

@@ -1,0 +1,24 @@
+package game.world.terrain;
+
+import mainLoop.MainLoopVariables;
+import rendering.models.RawModel;
+
+public class TerrainModelData {
+	
+	public final float[] vertices, normals, textureColours, textureCoords;
+	public final int[] indices;
+	public final int count, vertexCount, resolution;
+	
+	TerrainModelData(int count, int vertexCount, int resolution) {
+		this.count=count; this.vertexCount=vertexCount; this.resolution=resolution;
+		vertices = new float[count*3];
+		normals = new float[count*3];
+		textureColours = new float[count];
+		indices = new int[6*(vertexCount-1)*(vertexCount-1)];
+	}
+	
+	RawModel loadToModel() {
+		return MainLoopVariables.getLoader().loadToVAO(indices, new int[] {3,3,1}, vertices, normals, textureColours);
+	}
+
+}

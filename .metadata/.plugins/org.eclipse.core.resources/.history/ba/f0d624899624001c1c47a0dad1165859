@@ -1,0 +1,243 @@
+package rendering;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector4f;
+
+import entities.Camera;
+import entities.Entity;
+import entities.Light;
+import entities.Player;
+import game.world.terrain.Terrain;
+import mainLoop.DisplayManager;
+import rendering.entities.EntityRenderer;
+import rendering.font.TextMaster;
+import rendering.guis.GuiRenderer;
+import rendering.guis.GuiTexture;
+import rendering.loaders.Loader;
+import rendering.models.TexturedModel;
+import rendering.outline.MasterOutlineRenderer;
+import rendering.particles.ParticleMaster;
+import rendering.postProcessing.Fbo;
+import rendering.postProcessing.PostProcessing;
+import rendering.shadows.ShadowMapMasterRenderer;
+import rendering.skybox.SkyboxRenderer;
+import rendering.terrain.TerrainRenderer;
+import rendering.water.WaterRenderer;
+import rendering.water.WaterTile;
+
+public class MasterRenderer {
+	
+	public static final float FOV = 70, NEAR_PLANE = 0.1f, FAR_PLANE = 1000;
+	
+	
+	private Matrix4f projectionMatrix;
+	
+	private final SceneRenderer scene = new SceneRenderer();
+	
+	private final EntityRenderer entitiyRenderer;
+	private final WaterRenderer waterRenderer;
+	private final SkyboxRenderer skyboxRenderer;
+	private final TerrainRenderer terrainRenderer;
+	private final ShadowMapMasterRenderer shadowMasterRenderer;
+	private final GuiRenderer guiRenderer;
+	private final MasterOutlineRenderer outlineRenderer;
+	
+	private final Fbo multisampleFbo;
+	private final Fbo outputFbo;
+	private final Fbo outputFbo2;
+	
+	
+	
+	
+	public MasterRenderer(Loader loader, Camera cam) {
+		enableCulling();
+		createProjectionMatrix();
+		
+		entitiyRenderer = new EntityRenderer(projectionMatrix);
+		terrainRenderer = new TerrainRenderer(projectionMatrix);
+		skyboxRenderer = new SkyboxRenderer(loader, projectionMatrix);
+		shadowMasterRenderer = new ShadowMapMasterRenderer(cam);
+		outlineRenderer = new MasterOutlineRenderer(loader, projectionMatrix);
+		waterRenderer = new WaterRenderer(loader, projectionMatrix);
+		guiRenderer = new GuiRenderer(loader);
+		
+		multisampleFbo= new Fbo(Display.getWidth(), Display.getHeight());
+		outputFbo= new Fbo(Display.getWidth(), Display.getHeight(), Fbo.DEPTH_TEXTURE);
+		outputFbo2= new Fbo(Display.getWidth(), Display.getHeight(), Fbo.DEPTH_TEXTURE);
+		
+		PostProcessing.init(loader);
+		ParticleMaster.init(loader, projectionMatrix);
+		TextMaster.init(loader);
+		
+		
+	}
+	
+	public void renderScene(Map<TexturedModel, List<Entity>> entities, List<Terrain> terrains, List<Light> lights, Camera camera, Vector4f clipPlane) {
+		prepare();
+	
+		entitiyRenderer.render(entities, clipPlane, lights, camera);
+		
+		terrainRenderer.render(terrains, lights, clipPlane, camera, shadowMasterRenderer.getToShadowMapSpaceMatrix());
+		
+		skyboxRenderer.render(camera);
+		
+	}
+	
+	public void render(Map<TexturedModel, List<Entity>> entities, List<Terrain> terrains, List<Light> lights, List<WaterTile> waters, List<GuiTexture> guis, Camera camera, Vector4f clipPlane, Player player, Light sun) {
+		scene.loadVariables(entities, terrains, lights, camera, clipPlane);
+		
+		outlineRenderer.render(camera, player);
+		
+		shadowMasterRenderer.render(entities, sun);
+		
+		waterRenderer.renderReflection(scene, waters, camera);
+		
+		multisampleFbo.bindFrameBuffer();
+		
+		GL11.glDisable(GL30.GL_CLIP_DISTANCE0);
+		
+		scene.render();
+		
+		waterRenderer.render(waters, camera, lights.get(0));
+		
+		ParticleMaster.renderParticles(camera);
+		
+		multisampleFbo.unbindFrameBuffer();
+		multisampleFbo.resolveToFbo(GL30.GL_COLOR_ATTACHMENT0, outputFbo);
+		multisampleFbo.resolveToFbo(GL30.GL_COLOR_ATTACHMENT1, outputFbo2);
+		
+		PostProcessing.doPostProcessing(outputFbo.getColourTexture(), outputFbo2.getColourTexture());
+		
+		guiRenderer.render(guis);
+		
+		TextMaster.render();
+		
+	}
+	
+	public int getShadowMaptexture() {
+		return shadowMasterRenderer.getShadowMap();
+	}
+	
+	public Matrix4f getProjectionMatrix() {
+		return projectionMatrix;
+	}
+	
+	public void prepare() {
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT|GL11.GL_DEPTH_BUFFER_BIT);
+		//GL11.glClearColor(RED, GREEN, BLUE, 1);
+		GL13.glActiveTexture(GL13.GL_TEXTURE5);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getShadowMaptexture());
+		
+	}
+	
+    private void createProjectionMatrix(){
+    	projectionMatrix = new Matrix4f();
+		float aspectRatio = (float) Display.getWidth() / (float) Display.getHeight();
+		float y_scale = (float) ((1f / Math.tan(Math.toRadians(FOV / 2f))));
+		float x_scale = y_scale / aspectRatio;
+		float frustum_length = FAR_PLANE - NEAR_PLANE;
+
+		projectionMatrix.m00 = x_scale;
+		projectionMatrix.m11 = y_scale;
+		projectionMatrix.m22 = -((FAR_PLANE + NEAR_PLANE) / frustum_length);
+		projectionMatrix.m23 = -1;
+		projectionMatrix.m32 = -((2 * NEAR_PLANE * FAR_PLANE) / frustum_length);
+		projectionMatrix.m33 = 0;
+    }
+	
+	public static void enableCulling() {
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glCullFace(GL11.GL_BACK);
+	}
+	
+	public static void disableCulling() {
+		GL11.glDisable(GL11.GL_CULL_FACE);
+	}
+	
+	public GuiTexture createOutlineGui() {
+		return outlineRenderer.createOutlineGui();
+	}
+	
+	public final class SceneRenderer {
+		
+		private Map<TexturedModel, List<Entity>> entities;
+		private List<Terrain> terrains; 
+		private List<Light> lights; 
+		private Camera camera;
+		private Vector4f clipPlane;
+		
+		private void loadVariables(Map<TexturedModel, List<Entity>> entities, List<Terrain> terrains, List<Light> lights, Camera camera, Vector4f clipPlane) {
+			this.entities=entities;
+			this.terrains=terrains;
+			this.lights=lights;
+			this.camera=camera;
+			this.clipPlane=clipPlane;
+		}
+		
+		public static final byte
+			V_ENTITIES = 		0b00001,
+			V_TERRAINS = 		0b00010,
+			V_LIGHTS = 			0b00100,
+			V_CAMERA = 			0b01000,
+			V_CLIP_PLANE = 		0b10000;
+			
+		
+		public void render() {
+			renderScene(entities, terrains, lights, camera, clipPlane);
+		}
+		
+		public void render(byte values, Map<TexturedModel, List<Entity>> entities, List<Terrain> terrains, List<Light> lights, Camera camera, Vector4f clipPlane) {
+			Map<TexturedModel, List<Entity>> useE = this.entities;
+			List<Terrain> useT = this.terrains;
+			List<Light> useL = this.lights;
+			Camera useC = this.camera;
+			Vector4f useP = this.clipPlane;
+			
+			if((values & V_ENTITIES) != 0) {
+				useE = entities;
+			}
+			if((values & V_TERRAINS) != 0) {
+				useT = terrains;
+			}
+			if((values & V_LIGHTS) != 0) {
+				useL = lights;
+			}
+			if((values & V_CAMERA) != 0) {
+				useC = camera;
+			}
+			if((values & V_CLIP_PLANE) != 0) {
+				useP = clipPlane;
+			}
+			
+			renderScene(useE, useT, useL, useC, useP);
+		}
+	}
+	
+	
+	
+	public void cleanUp() {
+		terrainRenderer.cleanUp();
+		entitiyRenderer.cleanUp();
+		shadowMasterRenderer.cleanUp();
+		PostProcessing.cleanUp();
+		multisampleFbo.cleanUp();
+		outputFbo.cleanUp();
+		outputFbo2.cleanUp();
+		ParticleMaster.cleanUp();
+		TextMaster.cleanUp();
+		guiRenderer.cleanUp();
+		waterRenderer.cleanUp();
+		outlineRenderer.cleanUp();
+	}
+}

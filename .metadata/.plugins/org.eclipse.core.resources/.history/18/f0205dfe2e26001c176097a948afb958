@@ -1,0 +1,23 @@
+package game.world;
+
+import java.util.ArrayList;
+
+public class WorldRandomStyles {
+	
+	
+	
+	
+	public static interface WorldStyles{
+		
+		public final byte 
+			LAND_HEIGHT 	= 	0b00001,
+			WATER_DEPTH		=	0b00010;
+		
+		
+		public byte neededVariables();
+		public byte getType();
+		public WorldStyles getStyle(WorldStyles...styles);
+		
+	}
+
+}

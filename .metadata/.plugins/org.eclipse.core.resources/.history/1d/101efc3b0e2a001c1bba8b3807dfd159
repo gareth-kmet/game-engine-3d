@@ -1,0 +1,328 @@
+package game.world.terrain;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Random;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.WorldLoaderThread;
+import game.world.environment.styles.EnvironmentStyles;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.Height;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.Noise;
+import game.world.terrain.heights.WaterHeightStyles;
+import mainLoop.MainLoopVariables;
+import rendering.loaders.Loader;
+import rendering.loaders.ModelData;
+import rendering.models.RawModel;
+import rendering.water.WaterRenderer;
+import rendering.water.WaterTile;
+
+public class TerrainGenerator {
+	
+	private static final int CHUNK_LOAD = 4;
+
+	final ArrayList<WaterTile> waterTiles = new ArrayList<WaterTile>();
+	private final LandHeightStyles landStyle;
+	private final WaterHeightStyles waterStyle;
+	private final FalloutHeightStyles falloutStyle;
+	private final EnvironmentStyles environment;
+	
+	private final TerrainStorage storage;
+	
+	private TerrainGenerationRequest nextTerrainRequest = null;
+	private TerrainGenerationRequest currentTerrainRequest = null;
+	
+	TerrainGenerator(LandHeightStyles landStyles, WaterHeightStyles waterStyles, FalloutHeightStyles falloutStyles, EnvironmentStyles environmnet) {
+		TerrainVariables.heightFinder = new TerrainHeightFinder();
+		this.landStyle=landStyles;
+		this.waterStyle=waterStyles;
+		this.falloutStyle=falloutStyles;
+		this.environment=environmnet;
+		storage = new TerrainStorage();
+		
+		for(int x = -CHUNK_LOAD; x<=CHUNK_LOAD; x++) {
+			for(int z = -CHUNK_LOAD; z<=CHUNK_LOAD; z++) {
+				for(int xx = 0; xx<10; xx++) {
+					for(int zz=0; zz<10; zz++) {
+						WaterTile water = new WaterTile(TerrainVariables.SIZE*(x+(xx+0.5f)/10f), TerrainVariables.SIZE*(z+(zz+0.5f)/10f), TerrainVariables.Water.HEIGHT);
+						waterTiles.add(water);
+						MainLoopVariables.getWaters().add(water);
+					}
+				}
+			}
+		}
+	}
+	
+	void generate(int seed, Point playerChunk) {
+		
+		if(nextTerrainRequest!=null) {
+			nextTerrainRequest.removeFromThread(); // just incase it somehow did get threaded
+		}
+		nextTerrainRequest = new TerrainGenerationRequest(playerChunk, seed);
+		
+	}
+	
+	void updateGeneration() {
+		
+		if(currentTerrainRequest!=null) {
+			if(currentTerrainRequest.isComplete()) {
+				currentTerrainRequest.finish();
+				currentTerrainRequest=null;
+			}
+		}
+		
+		if(currentTerrainRequest==null && nextTerrainRequest != null) {
+			currentTerrainRequest = nextTerrainRequest;
+			nextTerrainRequest=null;
+			currentTerrainRequest.prepare();
+			currentTerrainRequest.thread();
+			
+		}
+		
+		
+	}
+	
+	void updateWaters(Point newPlayerChunk, Point oldPlayerChunk) {
+		int xDif = newPlayerChunk.getX()-oldPlayerChunk.getX();
+		xDif *= TerrainVariables.SIZE;
+		int zDif = newPlayerChunk.getY()-oldPlayerChunk.getY();
+		zDif *= TerrainVariables.SIZE;
+		for(WaterTile water : waterTiles) {
+			water.setX(water.getX()+xDif);
+			water.setZ(water.getZ()+zDif);
+			updateWaterRendering(water, newPlayerChunk);
+		}
+	}
+	
+	private void updateWaterRendering(WaterTile water, Point playerChunk) {
+		int x = (int) Math.floor(water.getX()/TerrainVariables.SIZE);
+		int z = (int) Math.floor(water.getZ()/TerrainVariables.SIZE);
+		x-=playerChunk.getX();
+		z-=playerChunk.getY();
+		
+		if(x*x+z*z>CHUNK_LOAD*CHUNK_LOAD) {
+			MainLoopVariables.getWaters().remove(water);
+		}else if(!MainLoopVariables.getWaters().contains(water)) {
+			MainLoopVariables.getWaters().add(water);
+		}
+	}
+	
+	
+	
+	
+	private class TerrainGenerationRequest extends WorldLoaderThread.Request{
+		
+		private final Point playerChunk;
+		private final int seed;
+		private final Terrain[] terrains;
+		private final TerrainModelData[] models;
+		private boolean prepared = false;
+		
+		private TerrainGenerationRequest(Point playerPos, int seed) {
+			this.playerChunk=playerPos;
+			this.seed=seed;
+			terrains = new Terrain[(2*CHUNK_LOAD+1)*(2*CHUNK_LOAD+1)];
+			models = new TerrainModelData[terrains.length];
+		}
+		
+		private void prepare() {
+			for(int i=0, tx = playerChunk.getX()-CHUNK_LOAD; tx<=playerChunk.getX()+CHUNK_LOAD; tx++) {
+				for(int tz = playerChunk.getY()-CHUNK_LOAD; tz<=playerChunk.getY()+CHUNK_LOAD; tz++, i++) {
+					terrains[i] = storage.getTerrain(tx, tz);
+				}
+			}
+			prepared = true;
+		}
+		
+		private void thread() {
+			if(!prepared) {
+				throw new IllegalAccessError(this.toString()+"Not prepared");
+			}
+			addToThread();
+		}
+
+		@Override
+		protected boolean run() {
+			
+			for(int i=0, tx = playerChunk.getX()-CHUNK_LOAD; tx<=playerChunk.getX()+CHUNK_LOAD; tx++) {
+				for(int tz = playerChunk.getY()-CHUNK_LOAD; tz<=playerChunk.getY()+CHUNK_LOAD; tz++, i++) {
+					if(terrains[i]!=null) {
+						continue;
+					}
+					
+					Point position = new Point(tx,tz);
+					int ox = tx * (TerrainVariables.VERTEX_COUNT-1);
+					int oz = tz * (TerrainVariables.VERTEX_COUNT-1);
+					Vector2f offset = new Vector2f(ox-1, oz-1);
+					
+					Noise.Data noiseMap = Noise.generateNoiseMap(
+							TerrainVariables.VERTEX_COUNT, TerrainVariables.VERTEX_COUNT, 
+							TerrainVariables.Heights.scale*landStyle.getScale(), 
+							seed, 
+							TerrainVariables.Heights.octaves, 
+							TerrainVariables.Heights.persistance, 
+							TerrainVariables.Heights.lacunarity, 
+							offset
+						);
+					
+					Height.Data heightMap = Height.generateHeightMap(noiseMap, landStyle, waterStyle);
+					falloutStyle.fallout(heightMap, (int)offset.x, (int)offset.y);
+					Terrain t = new Terrain(heightMap, position);
+					terrains[i] = t;
+					storage.setTerrain(t.x, t.z, t);
+				}
+			}
+			
+			for(int k=0; k<terrains.length; k++) {
+				Terrain t = terrains[k];
+				
+				int xTest = t.x-playerChunk.getX();
+				int zTest = t.z-playerChunk.getY();
+				int cTest = CHUNK_LOAD*CHUNK_LOAD;
+				
+				int dist = xTest*xTest + zTest*zTest;
+				
+				
+				
+				if(dist>cTest) {
+					t.currentResolution=0;
+					continue;
+				}
+				
+				int resolution=TerrainVariables.Heights.RESOLUTIONS[TerrainVariables.Heights.RESOLUTIONS.length-1];
+				
+				for(int res : TerrainVariables.Heights.RESOLUTIONS) {
+					if(dist<=res*res+1) {
+						resolution=res;
+						break;
+					}
+				}
+				
+				if(t.currentResolution!=resolution) {
+					int vertexCount = (TerrainVariables.VERTEX_COUNT-1) / resolution + 1;
+					int count = vertexCount*vertexCount;
+					TerrainModelData data = new TerrainModelData(count, vertexCount, resolution);
+					int vertexPointer = 0;
+					
+					
+					for(int i = 0, z = 0; z<vertexCount; i+=resolution, z++) {
+						for (int j = 0, x = 0; x<vertexCount; j+=resolution, x++) {
+							data.vertices[vertexPointer*3] = (float)x/((float)vertexCount-1)*TerrainVariables.SIZE;
+							float height = t.heights[j][i];
+							data.vertices[vertexPointer*3+1] = height;
+							data.vertices[vertexPointer*3+2] = (float)z/((float)vertexCount - 1) * TerrainVariables.SIZE;
+							TerrainVariables.Regions.loadColour(TerrainVariables.Regions.getRegion(height), data.textureColours, vertexPointer);
+							vertexPointer++;
+				
+						}
+					}
+					
+					
+					int pointer = 0;
+					for(int gz=0;gz<vertexCount-1;gz++){
+						for(int gx=0;gx<vertexCount-1;gx++){
+							int topLeft = (gz*vertexCount)+gx;
+							int topRight = topLeft + 1;
+							int bottomLeft = ((gz+1)*vertexCount)+gx;
+							int bottomRight = bottomLeft + 1;
+							data.indices[pointer++] = topLeft;
+							data.indices[pointer++] = bottomLeft;
+							data.indices[pointer++] = topRight;
+							data.indices[pointer++] = topRight;
+							data.indices[pointer++] = bottomLeft;
+							data.indices[pointer++] = bottomRight;
+						}
+					}
+					
+					Normals.generateNormals(t, data, TerrainGenerator.this);
+					
+					
+					models[k]=data;
+					
+				}	
+				
+			}
+			
+			return true;
+		}
+		
+		private void finish() {
+			
+			HashSet<Terrain> toBeRendered = new HashSet<Terrain>();
+			
+			for(int i=0; i<terrains.length; i++) {
+				
+				Terrain t = terrains[i];
+				if(t==null)continue;
+				
+				TerrainModelData m = models[i];
+				
+				if(m!=null) {
+					t.setModel(m);
+					t.currentResolution=m.resolution;
+				}
+				
+				if(t.currentResolution!=0)
+					toBeRendered.add(t);
+			}
+			
+			storage.renderTerrains(toBeRendered);
+		}
+		
+
+	}
+	
+	
+	
+	
+	float getHeightOfVertex(int x, int z) {
+		
+		
+		int tx = Math.floorDiv(x, TerrainVariables.VERTEX_COUNT-1);
+		int tz = Math.floorDiv(z, TerrainVariables.VERTEX_COUNT-1);
+		
+		Terrain terrain = storage.getTerrain(tx, tz);
+		if(terrain==null)return 0;
+		
+		int fx = x % (TerrainVariables.VERTEX_COUNT-1);
+		int fz = z % (TerrainVariables.VERTEX_COUNT-1);
+		
+		if(fx<0)fx=(TerrainVariables.VERTEX_COUNT-1)+fx;
+		if(fz<0)fz=(TerrainVariables.VERTEX_COUNT-1)+fz;
+		
+		
+		float height = terrain.heights[fx][fz];
+		
+		return height;
+	}
+	
+	
+	public class TerrainHeightFinder{
+		
+		public float getHeight(Vector3f pos) {
+			int tx = (int) Math.floor(pos.x / TerrainVariables.SIZE);
+			int tz = (int) Math.floor(pos.z / TerrainVariables.SIZE);
+			
+			Terrain terrain = storage.getTerrain(tx, tz);
+			if(terrain==null)return 0;
+			
+			float fx = pos.x % TerrainVariables.SIZE;
+			float fz = pos.z % TerrainVariables.SIZE;
+			
+			if(fx<0)fx=TerrainVariables.SIZE+fx;
+			if(fz<0)fz=TerrainVariables.SIZE+fz;
+			
+			return terrain.getHeightOfTerrain(fx, fz);
+		}
+	}
+
+}

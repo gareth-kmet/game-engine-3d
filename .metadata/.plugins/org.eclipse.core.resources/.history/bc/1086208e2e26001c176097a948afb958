@@ -1,0 +1,12 @@
+package game.world;
+
+import java.util.ArrayList;
+
+public abstract class WorldRandomStyles {
+	
+	
+	public static interface WorldStyles{
+		
+	}
+
+}

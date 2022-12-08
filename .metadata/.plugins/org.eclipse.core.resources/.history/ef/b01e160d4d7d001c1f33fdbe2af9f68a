@@ -1,0 +1,39 @@
+package physics.collisions;
+
+import java.util.HashSet;
+
+import game.world.gameObjects.GameObject;
+
+public record PhysicsCollisionReturnData(byte collisionType,boolean terrainCollision,HashSet<GameObject> collisions) {
+	
+	public PhysicsCollisionReturnData(boolean terrainCollision, PhysicsCollisionReturnData objectCollision) {
+		this(objectCollision.collisionType, terrainCollision, objectCollision.collisions);
+	}
+	
+	public boolean exists() {return collisionType!=EXIST_NULL_COLLISION&&!terrainCollision;};
+	
+	public static final byte 
+		EXIST_PART_XZ_COLLISION	= 0b0_10_00_00,
+		EXIST_FULL_XZ_COLLISION	= 0b0_01_00_00,
+		EXIST_XZ_COLLISION 		= EXIST_PART_XZ_COLLISION|EXIST_FULL_XZ_COLLISION,
+		
+		POSITIVE_Y_COLLISION	= 0b0_00_10_00,
+		NEGATIVE_Y_COLLISION	= 0b0_00_01_00,
+		EXIST_Y_COLLISION 		= POSITIVE_Y_COLLISION|NEGATIVE_Y_COLLISION,
+		
+		MOVEMENT_ROT_COLLISION	= 0b0_00_00_01,
+		STATIC_ROT_COLLISION	= 0b0_00_00_10,
+		EXIST_ROTATION_COLLISION= MOVEMENT_ROT_COLLISION|STATIC_ROT_COLLISION,
+		
+		EXIST_NULL_COLLISION	= 0b0_00_00_00,
+		EXIST_ALL_COLLISIONS	= 0b1_00_00_00;
+	
+	@Deprecated
+	public static final byte
+		POSITIVE_X_COLLISION	= 0b0_10_00_00,
+		POSITIVE_Z_COLLISION	= 0b0_00_00_10,
+		NEGATIVE_X_COLLISION	= 0b0_01_00_00,
+		NEGATIVE_Z_COLLISION	= 0b0_00_00_01;
+	
+	static final PhysicsCollisionReturnData NON_EXISTANT_COLLISION = new PhysicsCollisionReturnData(EXIST_NULL_COLLISION, false, new HashSet<GameObject>());
+}

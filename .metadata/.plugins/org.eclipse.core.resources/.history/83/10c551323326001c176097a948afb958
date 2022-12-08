@@ -1,0 +1,16 @@
+package game.world;
+
+public class WorldRandomStyles {
+	
+	
+	
+	public static interface WorldStyles{
+		
+		private enum Styles implements WorldStyles{
+			LAND_HEIGHT,
+			WATER_DEPTH,
+		}
+		
+	}
+
+}

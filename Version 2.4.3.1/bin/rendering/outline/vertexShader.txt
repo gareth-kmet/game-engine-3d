@@ -1,0 +1,48 @@
+#version 400 core
+
+const int MAX_TRANSFORMS = 75;
+const int MAX_WEIGHTS = 3;
+
+in vec3 position;
+in vec3 textureCoords;
+in ivec3 in_jointIndices;
+in vec3 in_weights;
+
+out vec3 pass_textureCoords;
+
+uniform mat4 transformationMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+
+uniform float numberOfRows;
+uniform vec2 offset;
+
+uniform float useAnimation;
+uniform mat4 jointTransforms[MAX_TRANSFORMS];
+
+
+void main(void){
+	
+	vec3 actualPosition = position;
+	
+	if(useAnimation>0.5){
+		vec4 totalPosition = vec4(0.0);
+		vec4 totalNormal = vec4(0.0);
+		for(int i=0;i<MAX_WEIGHTS;i++){
+			mat4 jointTransform = jointTransforms[in_jointIndices[i]];
+			vec4 posePosition = jointTransform * vec4(position, 1.0);
+			totalPosition += posePosition * in_weights[i];
+		}
+		actualPosition = totalPosition.xyz;
+	}
+	
+	vec4 worldPosition = transformationMatrix * vec4(actualPosition,1.0);
+	
+	vec4 positionRelativeToCam = viewMatrix * worldPosition;
+	
+	gl_Position = projectionMatrix * positionRelativeToCam;
+	
+	pass_textureCoords=(textureCoords/numberOfRows) + vec3(offset,0);
+	
+
+}

@@ -1,0 +1,9 @@
+package rendering;
+
+public interface RenderConditions {
+	
+	public static getRenderCondition(RenderConditions[] conditions) {
+		return conditions[conditions.length-1];
+	}
+
+}

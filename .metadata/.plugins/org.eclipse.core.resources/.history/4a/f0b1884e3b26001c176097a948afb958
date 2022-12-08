@@ -1,0 +1,87 @@
+package game.world.terrain.heights;
+
+import java.util.Random;
+
+public enum LandHeightStyles{
+	
+	/**
+	 * Equal water and land with shallow slope at 0.
+	 */
+	HILLY_ISLANDS(1.5f, 0){
+		@Override
+		public float calcHeight(float x) {
+			
+			float h = x*(x*x+0.1f)*(x-1.25f)*(x+1.25f);
+			h*=-1;
+			
+			return h;
+		}
+	},
+	
+	/**
+	 * Unequal land and water with a shallow slope at -0.3
+	 * Water has a higher slope than land.
+	 * 
+	 */
+	HILLY_LAND(1.75f,-0.3f){
+
+		@Override
+		public float calcHeight(float x) {
+			
+			final float d=0.5f, c=0.15f, j=2.7f, b=0.4f, k=1.37f, l=1.03f, a=3.8f, g=0.85f;
+			
+			
+			
+			x=x*d+c;
+			float height = -(x*(j*(x*x+b)-l))/k * (x+a) * (x-g);
+			
+			return height;
+			
+		}
+		
+	},
+	
+	TEST(1,0){
+
+		@Override
+		public float calcHeight(float x) {
+			// flat islands - good water code
+			return x*((x-0.8f)*(x-0.8f)+0.1f)*((x+0.4f)*(x+0.4f)+0.3f);
+		}
+		
+	}
+	
+	
+	;
+	
+	final float scale;
+	private final float xIntercept;
+	
+	private LandHeightStyles(float scale, float intercept) {
+		this.scale = scale;
+		this.xIntercept=intercept;
+	}
+	
+	public final float getHeight(float x, WaterHeightStyles waterStyle) {
+		return getHeightWithWaterTest(x, waterStyle)*1000;
+	}
+	
+	private float getHeightWithWaterTest(float x, WaterHeightStyles waterStyle) {
+		if(x<xIntercept) {
+			return waterStyle.calcHeight(x-xIntercept);
+		}else {
+			return calcHeight(x);
+		}
+	}
+	
+	protected abstract float calcHeight(float x);
+	
+	public final float getScale() {
+		return scale;
+	}
+
+	public static LandHeightStyles getRandomizedStyle() {
+		return values()[0];
+	}
+
+}

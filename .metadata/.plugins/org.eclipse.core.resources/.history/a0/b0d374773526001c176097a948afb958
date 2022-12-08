@@ -1,0 +1,7 @@
+package game.world.terrain.heights;
+
+interface HeightStyle {
+	
+	protected float calcHeight(float x);
+	
+}

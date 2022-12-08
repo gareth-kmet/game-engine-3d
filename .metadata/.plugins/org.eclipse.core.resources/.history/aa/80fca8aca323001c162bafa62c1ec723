@@ -1,0 +1,32 @@
+package rendering.loaders;
+
+import java.util.ArrayList;
+
+public enum LoaderStorage {;
+	
+	static ArrayList<VAO> vaos;
+	static ArrayList<VBO> vbos;
+	
+	public static class VAO{
+		public final int id;
+		public ArrayList<VBO> vbos;
+		
+		public VAO(int id, VBO ... vbos) {
+			this.id = id;
+			for(VBO vbo : vbos) {
+				this.vbos.add(vbo);
+			}
+		}
+		
+		public void addVBO(int vbo) {
+			vbos.add(new VBO(vbo));
+		}
+	}
+	
+	public static class VBO{
+		public final int id;
+		
+		public VBO
+	}
+
+}

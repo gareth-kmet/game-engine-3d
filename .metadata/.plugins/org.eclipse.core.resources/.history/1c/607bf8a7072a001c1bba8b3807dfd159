@@ -1,0 +1,8 @@
+package rendering;
+
+public interface RenderConditions {
+	
+	public static final byte 
+		GAME_CONDITIONS = 0b001;
+
+}

@@ -1,0 +1,38 @@
+package game.world.terrain;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+
+public class TerrainStorage {
+	
+	private final HashMap<Integer, HashMap<Integer, Terrain>> terrains = new HashMap<Integer, HashMap<Integer, Terrain>>();
+	
+	private HashSet<Terrain> lastRendered = new HashSet<Terrain>();
+	
+	void renderTerrains(HashSet<Terrain> terrains) {
+		
+		for(Terrain t : terrains) {
+			if(lastRendered.contains(t)) {
+				lastRendered.remove(t);
+				continue;
+			}
+		}
+	}
+	
+	void setTerrain(int x, int z, Terrain terrain) {
+		HashMap<Integer, Terrain> stepIn = terrains.get(x);
+		if(stepIn==null) {
+			stepIn = new HashMap<Integer, Terrain>();
+			terrains.put(x, stepIn);
+		}
+		stepIn.put(z, terrain);
+	}
+	
+	Terrain getTerrain(int x, int z) {
+		HashMap<Integer, Terrain> stepIn = terrains.get(x);
+		if(stepIn==null)return null;
+		return stepIn.get(z);
+	}
+
+}

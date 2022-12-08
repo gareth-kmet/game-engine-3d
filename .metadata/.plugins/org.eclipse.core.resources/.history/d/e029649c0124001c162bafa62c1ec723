@@ -1,0 +1,21 @@
+package rendering.models.textures;
+
+import rendering.loaders.Loader;
+
+public class TerrainTexture {
+	
+	private Loader.TEX textureID;
+
+	public TerrainTexture(Loader.TEX textureID) {
+		this.textureID = textureID;
+	}
+
+	public int getTextureID() {
+		return textureID.id;
+	}
+	
+	
+	
+	
+	
+}

@@ -1,0 +1,8 @@
+package game.world.terrain.heights;
+
+interface TerrainHeightStyle {
+	
+	public float calcHeight(float x);
+	public float getHeight(float x);
+	
+}

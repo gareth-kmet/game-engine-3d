@@ -1,0 +1,14 @@
+package game.world;
+
+public abstract class WorldLoaderRequest {
+	
+	private boolean complete;
+	
+	
+	protected WorldLoaderRequest() {
+		
+	}
+	
+	protected abstract void run();
+
+}

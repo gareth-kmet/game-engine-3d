@@ -1,0 +1,80 @@
+package ai.game;
+
+import java.util.HashSet;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector3f;
+
+import ai.AILoader;
+import ai.astar.AStar;
+import ai.astar.AStar.AStarResult;
+import ai.astar.AStarGrid;
+import game.world.WorldChunk;
+import game.world.environment.EnvironmentChunk;
+import game.world.environment.EnvironmentStorage;
+
+public class GameAITools {
+	
+	private final AILoader aiLoader;
+	private boolean aiLoaderRunning = false;
+	
+	public GameAITools() {
+		this.aiLoader= new AILoader();
+	}
+	
+	public void init() {
+		if(aiLoaderRunning)return;
+		aiLoader.start();
+		aiLoaderRunning=true;
+	}
+	
+	public void finish() {
+		if(!aiLoaderRunning)return;
+		aiLoader.destroy();
+		aiLoaderRunning=false;
+	}
+	
+	public final class AStarRequest extends AILoader.Request{
+		
+		private final AStarGrid[][] astarGrids;
+		private final HashSet<NeedAStarGridCreation> needCreations;
+		private final Vector3f startPos,targetPos;
+		
+		public AStarRequest(EnvironmentStorage chunks, Vector3f startPos, Vector3f targetPos) {
+			Point startPosChunkPoint = WorldChunk.getChunk(startPos);
+			Point targetPosChunkPoint = WorldChunk.getChunk(targetPos);
+			int minXChunk = Math.min(startPosChunkPoint.getX(), targetPosChunkPoint.getX())-1;
+			int maxXChunk = Math.max(startPosChunkPoint.getX(), targetPosChunkPoint.getX())+1;
+			int minYChunk = Math.min(startPosChunkPoint.getY(), targetPosChunkPoint.getY())-1;
+			int maxYChunk = Math.max(startPosChunkPoint.getY(), targetPosChunkPoint.getY())+1;
+			needCreations=new HashSet<NeedAStarGridCreation>();
+			AStarGrid[][] grids = new AStarGrid[maxXChunk-minXChunk][maxYChunk-minYChunk];
+			for(int i=0, cx=minXChunk; cx<=maxXChunk; i++, cx++) for(int j=0, cy=minYChunk; cy<=maxYChunk; j++,cy++) {
+				EnvironmentChunk chunk = chunks.getChunk(cx, cy);
+				if(chunk!=null) {
+					grids[i][j]=chunk.getAStarGrid();
+				}else {
+					needCreations.add(new NeedAStarGridCreation(i,j,cx,cy));
+				}
+			}
+			astarGrids=grids;
+			this.targetPos=targetPos;
+			this.startPos=startPos;
+		}
+
+		@Override
+		protected boolean run() {
+			for(NeedAStarGridCreation needs : needCreations) {
+				astarGrids[needs.i][needs.j] = WorldChunk.newAStarGrid(needs.cx, needs.cy).fillAllWithEffect(AStarGrid.ASTAR_COLLISION_VALUE);
+			}
+			AStarGrid totalGrid = AStarGrid.combineGrids(astarGrids).blurPenalty(AStarGrid.DEFAULT_BLUR_SIZE);
+			AStarResult astarResult = AStar.run(totalGrid.nodes(), null, null, null)
+			return false;
+		}
+		
+		private record NeedAStarGridCreation(int i, int j, int cx, int cy) {}
+	}
+	
+	
+
+}

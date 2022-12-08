@@ -1,0 +1,267 @@
+package game.world.terrain;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Random;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.terrain.heights.Height;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.Noise;
+import game.world.terrain.heights.WaterHeightStyles;
+import mainLoop.MainLoopVariables;
+import rendering.loaders.Loader;
+import rendering.models.RawModel;
+import rendering.water.WaterRenderer;
+import rendering.water.WaterTile;
+
+public class TerrainGenerator {
+	
+	private static final int CHUNK_LOAD = 4;
+	
+	final HashMap<Integer, HashMap<Integer, Terrain>> terrains = new HashMap<Integer, HashMap<Integer, Terrain>>();
+	final ArrayList<WaterTile> waterTiles = new ArrayList<WaterTile>();
+	private final LandHeightStyles landStyle;
+	private final WaterHeightStyles waterStyle;
+	
+	TerrainGenerator(LandHeightStyles landStyles, WaterHeightStyles waterStyles) {
+		TerrainVariables.heightFinder = new TerrainHeightFinder();
+		this.landStyle=landStyles;
+		this.waterStyle=waterStyles;
+		
+		for(int x = -CHUNK_LOAD; x<=CHUNK_LOAD; x++) {
+			for(int z = -CHUNK_LOAD; z<=CHUNK_LOAD; z++) {
+				for(int xx = 0; xx<10; xx++) {
+					for(int zz=0; zz<10; zz++) {
+						WaterTile water = new WaterTile(TerrainVariables.SIZE*(x+(xx+0.5f)/10f), TerrainVariables.SIZE*(z+(zz+0.5f)/10f), TerrainVariables.Water.HEIGHT);
+						waterTiles.add(water);
+						MainLoopVariables.getWaters().add(water);
+					}
+				}
+				
+			}
+		}
+		
+	}
+	
+	void generate(int seed, Point playerChunk) {
+		
+		for(int tx = playerChunk.getX()-CHUNK_LOAD; tx<=playerChunk.getX()+CHUNK_LOAD; tx++) {
+			for(int tz = playerChunk.getY()-CHUNK_LOAD; tz<=playerChunk.getY()+CHUNK_LOAD; tz++) {
+				
+				if(getTerrain(tx, tz)!=null) {
+					continue;
+				}
+				Vector2f position = new Vector2f(tx,tz);
+				int ox = tx * (TerrainVariables.VERTEX_COUNT-1);
+				int oz = tz * (TerrainVariables.VERTEX_COUNT-1);
+				Vector2f offset = new Vector2f(ox-1, oz-1);
+				Terrain terrain = generateTerrain(position, offset, seed);
+				setTerrain(tx, tz, terrain);
+			}
+		}
+		
+		MainLoopVariables.getTerrains().clear();
+		
+		for(int tx = playerChunk.getX()-CHUNK_LOAD; tx<=playerChunk.getX()+CHUNK_LOAD; tx++) {
+			for(int tz = playerChunk.getY()-CHUNK_LOAD; tz<=playerChunk.getY()+CHUNK_LOAD; tz++) {
+				
+				int xTest = tx-playerChunk.getX();
+				int zTest = tz-playerChunk.getY();
+				int cTest = CHUNK_LOAD*CHUNK_LOAD;
+				
+				int dist = xTest*xTest + zTest*zTest;
+				
+				
+				
+				if(dist>cTest) {
+					continue;
+				}
+				
+				int resolution=TerrainVariables.Heights.RESOLUTIONS[TerrainVariables.Heights.RESOLUTIONS.length-1];
+				
+				for(int res : TerrainVariables.Heights.RESOLUTIONS) {
+					if(dist<=res*res+1) {
+						resolution=res;
+						break;
+					}
+				}
+				
+				Terrain terrain = getTerrain(tx,tz);
+				
+				if(terrain.currentResolution!=resolution) {
+					if(terrain.getModel()!=null)terrain.getModel().delete();
+					generateModel(terrain, resolution);
+					terrain.currentResolution=resolution;
+				}	
+				MainLoopVariables.getTerrains().add(terrain);
+			}
+		}
+	}
+	
+	void updateWaters(Point newPlayerChunk, Point oldPlayerChunk) {
+		int xDif = newPlayerChunk.getX()-oldPlayerChunk.getX();
+		xDif *= TerrainVariables.SIZE;
+		int zDif = newPlayerChunk.getY()-oldPlayerChunk.getY();
+		zDif *= TerrainVariables.SIZE;
+		for(WaterTile water : waterTiles) {
+			water.setX(water.getX()+xDif);
+			water.setZ(water.getZ()+zDif);
+			updateWaterRendering(water, newPlayerChunk);
+		}
+	}
+	
+	private void updateWaterRendering(WaterTile water, Point playerChunk) {
+		int x = (int) Math.floor(water.getX()/TerrainVariables.SIZE);
+		int z = (int) Math.floor(water.getZ()/TerrainVariables.SIZE);
+		x-=playerChunk.getX();
+		z-=playerChunk.getY();
+		
+		if(x*x+z*z>CHUNK_LOAD*CHUNK_LOAD) {
+			MainLoopVariables.getWaters().remove(water);
+		}else if(!MainLoopVariables.getWaters().contains(water)) {
+			MainLoopVariables.getWaters().add(water);
+		}
+	}
+	
+	
+	void setTerrain(int x, int z, Terrain terrain) {
+		HashMap<Integer, Terrain> stepIn = terrains.get(x);
+		if(stepIn==null) {
+			stepIn = new HashMap<Integer, Terrain>();
+			terrains.put(x, stepIn);
+		}
+		stepIn.put(z, terrain);
+	}
+	
+	Terrain getTerrain(int x, int z) {
+		HashMap<Integer, Terrain> stepIn = terrains.get(x);
+		if(stepIn==null)return null;
+		return stepIn.get(z);
+	}
+
+	
+	private Terrain generateTerrain(Vector2f position, Vector2f offset, int seed) {
+		
+		Noise.Data noiseMap = Noise.generateNoiseMap(
+				TerrainVariables.VERTEX_COUNT, TerrainVariables.VERTEX_COUNT, 
+				TerrainVariables.Heights.scale*landStyle.getScale(), 
+				seed, 
+				TerrainVariables.Heights.octaves, 
+				TerrainVariables.Heights.persistance, 
+				TerrainVariables.Heights.lacunarity, 
+				offset
+			);
+		Height.Data heightMap = Height.generateHeightMap(noiseMap, landStyle, waterStyle);
+		
+		return new Terrain(null, heightMap, position);
+	}
+	
+	private void generateModel(Terrain terrain, int resolution) {
+		
+		int vertexCount = (TerrainVariables.VERTEX_COUNT-1) / resolution + 1;
+		int count = vertexCount*vertexCount;
+		float[] vertices = new float[count*3],
+				normals = new float[count*3],
+				textureColours = new float[count*3];
+		int[] indices = new int[6*(vertexCount-1)*(vertexCount-1)];
+		int vertexPointer = 0;
+		
+		
+		for(int i = 0, z = 0; z<vertexCount; i+=resolution, z++) {
+			for (int j = 0, x = 0; x<vertexCount; j+=resolution, x++) {
+				vertices[vertexPointer*3] = (float)x/((float)vertexCount-1)*TerrainVariables.SIZE;
+				float height = terrain.heights[j][i];
+				vertices[vertexPointer*3+1] = height;
+				vertices[vertexPointer*3+2] = (float)z/((float)vertexCount - 1) * TerrainVariables.SIZE;
+				
+				int vx = terrain.x * TerrainVariables.VERTEX_COUNT + x;
+				int vz = terrain.z * TerrainVariables.VERTEX_COUNT + z;
+				
+				Vector3f normal = calculateNormal(vx, vz);
+				normals[vertexPointer*3] = normal.x;
+				normals[vertexPointer*3+1] = normal.y;
+				normals[vertexPointer*3+2] = normal.z;
+				
+				TerrainVariables.Regions.loadColour(TerrainVariables.Regions.getRegion(height), textureColours, vertexPointer);
+				vertexPointer++;
+	
+			}
+		}
+		int pointer = 0;
+		for(int gz=0;gz<vertexCount-1;gz++){
+			for(int gx=0;gx<vertexCount-1;gx++){
+				int topLeft = (gz*vertexCount)+gx;
+				int topRight = topLeft + 1;
+				int bottomLeft = ((gz+1)*vertexCount)+gx;
+				int bottomRight = bottomLeft + 1;
+				indices[pointer++] = topLeft;
+				indices[pointer++] = bottomLeft;
+				indices[pointer++] = topRight;
+				indices[pointer++] = topRight;
+				indices[pointer++] = bottomLeft;
+				indices[pointer++] = bottomRight;
+			}
+		}
+		terrain.setModel(MainLoopVariables.getLoader().loadToVAO(indices, new int[] {3,3,3}, vertices, normals, textureColours));
+	}
+	
+	private float getHeightOfVertex(int x, int z) {
+		
+		
+		int tx = Math.floorDiv(x, TerrainVariables.VERTEX_COUNT);
+		int tz = Math.floorDiv(z, TerrainVariables.VERTEX_COUNT);
+		
+		Terrain terrain = getTerrain(tx, tz);
+		if(terrain==null)return 0;
+		
+		int fx = x % TerrainVariables.VERTEX_COUNT;
+		int fz = z % TerrainVariables.VERTEX_COUNT;
+		
+		if(fx<0)fx=TerrainVariables.VERTEX_COUNT+fx;
+		if(fz<0)fz=TerrainVariables.VERTEX_COUNT+fz;
+		
+		
+		float height = terrain.heights[fx][fz];
+		
+		return height;
+	}
+	
+	private Vector3f calculateNormal(int x, int z) {
+		
+		float heightL = getHeightOfVertex(x-1, z);
+		float heightR = getHeightOfVertex(x+1, z);
+		float heightD = getHeightOfVertex(x, z-1);
+		float heightU = getHeightOfVertex(x, z+1);
+		Vector3f normal = new Vector3f(heightL-heightR, 2f, heightD-heightU);
+		normal.normalise();
+		//System.out.println(normal.toString());
+		return normal;
+	}
+	
+	
+	public class TerrainHeightFinder{
+		
+		public float getHeight(Vector3f pos) {
+			int tx = (int) Math.floor(pos.x / TerrainVariables.SIZE);
+			int tz = (int) Math.floor(pos.z / TerrainVariables.SIZE);
+			
+			Terrain terrain = getTerrain(tx, tz);
+			if(terrain==null)return 0;
+			
+			float fx = pos.x % TerrainVariables.SIZE;
+			float fz = pos.z % TerrainVariables.SIZE;
+			
+			if(fx<0)fx=TerrainVariables.SIZE+fx;
+			if(fz<0)fz=TerrainVariables.SIZE+fz;
+			
+			return terrain.getHeightOfTerrain(fx, fz);
+		}
+	}
+
+}

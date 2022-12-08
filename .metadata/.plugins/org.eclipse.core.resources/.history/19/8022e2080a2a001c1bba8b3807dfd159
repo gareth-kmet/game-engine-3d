@@ -1,0 +1,15 @@
+package game.world;
+
+import java.util.Random;
+
+import game.GameLoopManager;
+
+public interface WorldLoopManager extends GameLoopManager{
+	
+	public void create(Random random, WorldRandomStyles styles[]);
+	@Override
+	public default void create() {
+		create(new Random(), null);
+	}
+
+}

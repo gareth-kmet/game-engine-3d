@@ -1,0 +1,35 @@
+package game.world.environment.styles;
+
+import game.world.terrain.TerrainModelData;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import rendering.loaders.Loader;
+
+public enum EnvironmentStyles {
+	
+	NORMAL{
+
+		@Override
+		public Environment getEnvironment() {
+			return null;
+		}
+		
+	}
+
+	
+	;
+	
+	public static EnvironmentStyles getRandomizedStyle(LandHeightStyles landStyle, WaterHeightStyles waterStyle, FalloutHeightStyles falloutStyle) {
+		return values()[0];
+	}
+	
+	public abstract Environment getEnvironment();
+	
+	static abstract class Environment{
+		
+		public abstract void loadTextures(Loader loader);
+		public abstract void activateTextures();
+		public abstract void findTextures(TerrainModelData terrain);
+	}
+}

@@ -1,0 +1,32 @@
+package game.world.environment.styles;
+
+import org.lwjgl.opengl.GL13;
+
+import game.world.WorldRandomStyles;
+import game.world.terrain.TerrainModelData;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import rendering.loaders.Loader;
+
+public enum EnvironmentStyles implements WorldRandomStyles, EnvironmentStyles.Environment{
+	
+	NORMAL{
+
+		@Override
+		public Environment getEnvironment() {
+			return null;
+		}
+		
+	}
+
+	
+	;
+	
+	public static EnvironmentStyles getRandomizedStyle(LandHeightStyles landStyle, WaterHeightStyles waterStyle, FalloutHeightStyles falloutStyle) {
+		return values()[0];
+	}
+	
+	public abstract Environment getEnvironment();
+
+}

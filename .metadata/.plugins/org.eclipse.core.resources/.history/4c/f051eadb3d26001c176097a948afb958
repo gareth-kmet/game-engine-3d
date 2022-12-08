@@ -1,0 +1,28 @@
+package game.world.terrain;
+
+import game.GameLoopManager;
+
+public class TerrainManager implements GameLoopManager {
+	
+	private TerrainGenerator generator;
+
+	@Override
+	public void create() {
+		generator = new TerrainGenerator();
+		generator.generate();
+
+	}
+
+	@Override
+	public void update() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void destroy() {
+		// TODO Auto-generated method stub
+
+	}
+
+}

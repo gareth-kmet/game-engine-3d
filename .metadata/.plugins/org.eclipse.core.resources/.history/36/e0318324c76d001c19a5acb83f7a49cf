@@ -1,0 +1,20 @@
+package game.world.gameObjects.entities;
+
+import org.lwjgl.util.vector.Vector3f;
+
+import physics.collisions.PhysicsMovement;
+
+public abstract class MoveableGameEntity extends GameEntity {
+	
+	protected final PhysicsMovement physicsMovement;
+
+	protected MoveableGameEntity(Vector3f pos, Vector3f rot, float scale, float physicsMovementRation) {
+		super(pos, rot, scale);
+		physicsMovement=new PhysicsMovement(this,physicsMovementRation);
+	}
+	
+	public final PhysicsMovement getPhysicsMovement() {
+		return this.physicsMovement;
+	}
+
+}

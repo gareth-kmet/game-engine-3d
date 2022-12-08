@@ -1,0 +1,17 @@
+package game.world;
+
+public class WorldRandomStyles {
+	
+	private static enum RandomStyles{
+		LAND_HEIGHT,
+		WATER_DEPTH,
+		
+		;
+		public final byte id;
+		
+		private RandomStyles(byte id){
+			this.id=id;
+		}
+	}
+
+}

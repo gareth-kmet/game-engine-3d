@@ -1,0 +1,24 @@
+package rendering.models;
+
+import rendering.loaders.Loader;
+
+public class RawModel {
+	
+	private int vertexCount;
+	private Loader.VAO vao;
+	
+	public RawModel(VAO vao, int vertexCount) {
+		this.vao=vao;
+		this.vertexCount=vertexCount;
+	}
+
+	public int getVaoID() {
+		return vao.id;
+	}
+
+	public int getVertexCount() {
+		return vertexCount;
+	}
+	
+	
+}

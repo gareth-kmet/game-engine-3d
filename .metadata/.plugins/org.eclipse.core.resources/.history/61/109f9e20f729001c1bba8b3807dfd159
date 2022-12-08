@@ -1,0 +1,15 @@
+package game.world.environment.styles;
+
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+
+public enum EnvironmentStyles {
+
+	
+	;
+	
+	public static EnvironmentStyles getRandomizedStyle(LandHeightStyles landStyle, WaterHeightStyles waterStyle, FalloutHeightStyles falloutStyle) {
+		return values()[0];
+	}
+}

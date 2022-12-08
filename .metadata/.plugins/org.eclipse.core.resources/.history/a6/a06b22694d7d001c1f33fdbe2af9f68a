@@ -1,0 +1,80 @@
+package game.world.entities.animals;
+
+import java.util.Random;
+
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import entities.Entity;
+import game.world.WorldVariables;
+import game.world.entities.animals.AfraidAnimalIntelligence.FearfullAnimalGameEntity;
+import game.world.environment.EnvironmentChunk;
+import game.world.environment.EnvironmentStorage;
+import game.world.gameObjects.entities.movables.GeniusGameEntity;
+import mainLoop.MainLoopVariables;
+import objects.TexturedModels;
+import physics.collisions.PhysicsCollisionReturnData;
+import rendering.loaders.Loader;
+import toolbox.Maths;
+
+public class AfraidBullAnimal extends GeniusGameEntity implements FearfullAnimalGameEntity{
+	
+	private final AfraidAnimalIntelligence intel;
+	private final static Random spawnRandom = new Random();
+
+	private static final float WALK_SPEED=1.5f, RUN_SPEED=8.94f;
+	
+	private boolean killed = false;
+
+	public AfraidBullAnimal(Vector3f pos, Vector3f rot, float scale) {
+		super(pos, rot, scale, 1/2f);
+		Entity ent = new Entity(TexturedModels.BULL, pos, rot.x, rot.y, rot.z, scale);
+		ent.loadTexturedModelType(MainLoopVariables.getLoader());
+		addEntity(ent, 0x4A6);
+		intel = new AfraidAnimalIntelligence(this, 20, 100);
+		addToList(intel, DECIDING_LIST|NEED_LOAD_LIST);
+		addToList(new WaterIntelligence(this), DECIDING_LIST);
+	}
+	
+	@Override
+	protected void makeOwnDecision(WorldVariables vars) {}
+	@Override
+	public void physicsMovementApplied(PhysicsCollisionReturnData collisionReturnData) {}
+
+	@Override
+	public int[] getAnimateEntityIds() {
+		return new int[] {0x4a6};
+	}
+	
+	public boolean isKilled() {
+		return killed;
+	}
+	
+	@Override
+	public void despawn() {
+		super.despawn();
+		killed=true;
+	}
+	
+	@Override
+	public float getWalkSpeed() {
+		return WALK_SPEED;
+	}
+
+	@Override
+	public float getRunSpeed() {
+		return RUN_SPEED;
+	}
+	
+	
+	public static AfraidBullAnimal spawn(Vector3f playerPos, Loader loader, EnvironmentStorage storage) {
+		float angle = spawnRandom.nextFloat(360f);
+		float distance = spawnRandom.nextFloat(200f, 300f);
+		Vector2f pos = Maths.getRotatedMovementFromDegrees(distance, angle);
+		Vector3f pos3 = Maths.toVector3f(pos);
+		Vector3f.add(pos3, playerPos, pos3);
+		AfraidBullAnimal a = new AfraidBullAnimal(pos3, new Vector3f(), 0.25f);
+		EnvironmentChunk.spawnObject(loader, storage, a);
+		return a;
+	}
+}

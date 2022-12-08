@@ -1,0 +1,12 @@
+package game.world.terrain;
+
+public class TerrainModelData {
+	
+	TerrainModelData(float count, float vertexCount) {
+		float[] vertices = new float[count*3],
+				normals = new float[count*3],
+				textureColours = new float[count*3];
+		int[] indices = new int[6*(vertexCount-1)*(vertexCount-1)];
+	}
+
+}

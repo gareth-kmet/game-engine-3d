@@ -1,0 +1,9 @@
+1635133331104	Delete element
+1635133362501	Delete element
+1635134232270	Rename type 'NatureBiome'
+1635134829388	Rename type 'BiomeManager'
+1635193891463	Move member 'CHUNK_SIZE'
+1635193921773	Rename field 'CHUNK_SIZE'
+1635220330715	Delete element
+1635275134120	Change method 'generateTextures'
+1635275153858	Change method 'generateTexture'

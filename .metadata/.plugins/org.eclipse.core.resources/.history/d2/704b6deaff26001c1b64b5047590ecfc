@@ -1,0 +1,45 @@
+package game.world.terrain.heights;
+
+import java.util.Random;
+
+import org.lwjgl.util.Point;
+
+public enum FalloutHeightStyles {
+	
+	TEST(){
+
+		@Override
+		public float calcFallout(float x) {
+			return 0.005f*x;
+		}
+		
+	}
+	
+	
+	;
+	
+	protected abstract float calcFallout(float dist);
+	
+	public void fallout(Height.Data data, Point vertex_0_0) {
+		float[][] map = data.getMap();
+		for(int x=0; x<map.length; x++) {
+			for(int z=0; z<map[x].length; z++) {
+				
+				int vx = x+vertex_0_0.getX();
+				int vy = x+vertex_0_0.getY();
+				int dist = vx*vx+vy*vy;
+				
+				float fallout = calcFallout(dist);
+				float height = map[x][z]+fallout;
+				if(height<data.min)data.min=height;
+				if(height>data.max)data.max=height;
+				map[x][z] = height;
+			}
+		}
+	}
+
+	public static FalloutHeightStyles getRandomizedStyle(final Random random, final LandHeightStyles landStyle, final WaterHeightStyles waterStyle) {
+		return values()[0];
+	}
+	
+}

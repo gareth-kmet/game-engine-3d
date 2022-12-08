@@ -1,0 +1,82 @@
+package game.world.terrain;
+
+import game.world.WorldRandomStyles.Styles;
+import game.world.WorldRandomStyles.WorldStyles;
+
+public enum LandHeightStyles implements WorldStyles{
+	
+	/**
+	 * Equal water and land with shallow slope at 0.
+	 */
+	HILLY_ISLANDS(1.5f){
+		@Override
+		protected float calcHeight(float x) {
+			
+			float h = x*(x*x+0.1f)*(x-1.25f)*(x+1.25f);
+			h*=-1;
+			
+			return h;
+		}
+	},
+	
+	/**
+	 * Unequal land and water with a shallow slope at -0.3
+	 * Water has a higher slope than land.
+	 * 
+	 */
+	HILLY_LAND(1.75f){
+
+		@Override
+		protected float calcHeight(float x) {
+			
+			final float d=0.5f, c=0.15f, j=2.7f, b=0.4f, k=1.37f, l=1.03f, a=3.8f, g=0.85f, q=-0.3f, m=4.3f;
+			final float 
+				p = x < q ? m : 1f;
+			
+			
+			
+			x=x*d+c;
+			float height = -(x*(j*(x*x+b)-l))/k * (x+a) * (x-g);
+			height = p*height;
+			
+			return height;
+			
+		}
+		
+	},
+	
+	TEST(1){
+
+		@Override
+		protected float calcHeight(float x) {
+			// flat islands - good water code
+			return x*((x-0.8f)*(x-0.8f)+0.1f)*((x+0.4f)*(x+0.4f)+0.3f);
+		}
+		
+	}
+	
+	
+	;
+	
+
+	@Override
+	public WorldStyles getRandomizedStyle(Styles... styles) {
+		return null;
+	}
+	
+	
+	static final LandHeightStyles STYLE = TEST;
+	
+	final float scale;
+	
+	private LandHeightStyles(float scale) {
+		this.scale = scale;
+	}
+	
+	protected abstract float calcHeight(float x);
+	
+	float getHeight(float x) {
+		return calcHeight(x)*1000;
+	}
+
+}

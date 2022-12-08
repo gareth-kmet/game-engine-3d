@@ -1,0 +1,11 @@
+package game.world;
+
+public interface WorldRandomStyles {
+	
+	public static final byte 
+		LAND_HEIGHT_STYLE					= 0b000001,
+		WATER_HEIGHT_STYLE					= 0b000010,
+		FALLOUT_STYLE						= 0b000100,
+		EVIRONMENT_STYLE					= 0b001000,
+
+}

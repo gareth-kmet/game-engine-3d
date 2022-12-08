@@ -1,0 +1,119 @@
+package rendering.entities;
+
+public abstract class EntityRenderCondition {
+	
+	public enum ResolutionCondition{
+		USE_HIGHEST_RESOLUTION {
+			@Override
+			public float getResolutionPercent(float distanceSqr, float maxDist) {
+				return 1f;
+			}
+		},
+		USE_RADICAL_MORE_HIGH_THAN_LOW {
+			@Override
+			public float getResolutionPercent(float distanceSqr, float maxDist) {
+				float a = distanceSqr / (maxDist*maxDist);
+				return -a + 1;
+			}
+		},
+		USE_EXPONETIAL_MORE_LOW_THAN_HIGH {
+			@Override
+			public float getResolutionPercent(float distanceSqr, float maxDist) {
+				float a = distanceSqr / (maxDist * maxDist/10);
+				return (float) Math.pow(2, -a);
+			}
+		},
+		USE_LOWEST_REOLUTION {
+			@Override
+			public float getResolutionPercent(float distanceSqr, float maxDist) {
+				return 0f;
+			}
+		},
+		
+		
+		;
+		public final int priority;
+		private ResolutionCondition() {
+			this.priority=ordinal();
+		}
+
+		public abstract float getResolutionPercent(float distanceSqr, float maxDist);
+		
+	}
+	
+	public static abstract class LinkedEntityRenderCondition extends EntityRenderCondition{
+		private final EntityRenderCondition link;
+		
+		protected LinkedEntityRenderCondition(EntityRenderCondition link) {
+			this.link=link;
+		}
+		
+		@Override
+		public boolean precondition(int frameId) {return $precondition()&&link.precondition(frameId);}
+		@Override
+		public boolean canUseNormalMap(int frameId) {return $canUseNormalMap()&&link.canUseNormalMap(frameId);}
+		@Override
+		public float   getResolution(int frameId) {return Math.min($getResolution(), link.getResolution(frameId));}
+		
+		
+		protected boolean $precondition() {return true;}
+		protected float $getResolution() {return 1.0f;}
+		protected boolean $canUseNormalMap() {return true;}
+	}
+	
+	public static abstract class SophisticatedEntityRenderCondition extends EntityRenderCondition{
+		private PreFill preconditionfilled 			= new PreFill(-1, false);
+		private ResFill resolutionConditionFilled	= new ResFill(-1, 0);
+		private NorFill normalMapConditionFilled 	= new NorFill(-1, false);
+		
+		/**
+		 * Returns a boolean representing if the object can render or not. Also provides any preconditions for the rest of the methods.
+		 */
+		@Override
+		public final boolean precondition(int frameId) {
+			if(preconditionfilled.frameId!=frameId) {
+				preconditionfilled=new PreFill(frameId, $precondition());
+			}
+			return preconditionfilled.condition;
+		}
+		
+		@Override
+		public final float getResolution(int frameId) {
+			if(resolutionConditionFilled.frameId!=frameId) {
+				resolutionConditionFilled = new ResFill(frameId, $getResolution());
+			}
+			return resolutionConditionFilled.result;
+		}
+		@Override
+		public final boolean canUseNormalMap(int frameId) {
+			if(normalMapConditionFilled.frameId!=frameId) {
+				normalMapConditionFilled=new NorFill(frameId, $canUseNormalMap());
+			}
+			return normalMapConditionFilled.condition;
+		}
+		
+		protected boolean $precondition() {return true;}
+		protected float $getResolution() {return 1.0f;}
+		protected boolean $canUseNormalMap() {return true;}
+		
+		private final class PreFill {
+			private final int frameId; private final boolean condition;
+			private PreFill(int f, boolean c) {frameId=f; condition=c;}
+		}
+		private final class ResFill {
+			private final int frameId; private final float result;
+			private ResFill(int f, float r) {frameId=f; result=r;}
+		}
+		private final class NorFill {
+			private final int frameId; private final boolean condition;
+			private NorFill(int f, boolean c) {frameId=f; condition=c;}
+		}
+		
+	}
+	
+	public boolean precondition(int frameId) {return true;}
+	public boolean canUseNormalMap(int frameId) {return true;}
+	public float   getResolution(int frameId) {return 1f;}
+	
+	public static final EntityRenderCondition NULL_CONDITION = new EntityRenderCondition() {};
+

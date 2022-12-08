@@ -1,0 +1,55 @@
+package game.world.terrain.heights;
+
+import game.world.terrain.heights.Noise.Data;
+import rendering.water.WaterRenderer;
+
+public abstract class Height {
+	
+	private static float[][] heights;
+	private static Noise.Data noise;
+	
+	
+	public static Data generateHeightMap(final Noise.Data noiseData){
+		heights = new float[noiseData.map.length][noiseData.map[0].length];
+		noise=noiseData;
+		
+		generateHeights();
+		
+		return new Data(heights, noise);
+	}
+	
+	private static void generateHeights(LandHeightStyles landStyle) {
+		for (int x = 0; x < heights.length; x++) {
+			for (int z = 0; z < heights[x].length; z++) {
+				float h = getHeight(noise.map[x][z], landStyle);
+				heights[x][z] = h;
+			}
+		}
+	}
+	
+	private static float getHeight(float x, LandHeightStyles landStyle) {
+		return landStyle.getHeight(x);
+	}
+	
+//	flat 		= x*x*x; 				
+//	hilly		= x*(x*x+0.1f)*(x-1.25f)*(x+1.25f);			
+//	mountain	= x*x*x+x*x+x;			
+//	islands 	= x*x*x+x*x+x/2f; | y = -h(-x)*1000;
+//	oceans 		= -x*x-x*0.25f+0.1f;	
+//	flat islands= x*((x-0.8f)*(x-0.8f)+0.1f)*((x+0.4f)*(x-0.4f)+0.3f);
+	
+	
+	
+	public final static class Data{
+		
+		final game.world.terrain.heights.Data noiseData;
+		final float[][] map;
+		
+		private Data(float[][] heights, Noise.Data noise) {
+			noiseData = noise;
+			map=heights;
+		}
+		
+	}
+
+}

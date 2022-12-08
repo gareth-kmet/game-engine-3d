@@ -1,0 +1,30 @@
+package game.world.environment.styles;
+
+import game.world.terrain.TerrainModelData;
+import rendering.loaders.Loader;
+
+public class NormalEnvironment implements Environment {
+	
+	protected static final String[] TEXTURE_LOCATIONS = {
+			"res/mud",
+	};
+
+	@Override
+	public void loadTextures(Loader loader) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void activateTextures() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void findTextures(TerrainModelData terrain) {
+		// TODO Auto-generated method stub
+
+	}
+
+}

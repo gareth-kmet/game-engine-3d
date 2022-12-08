@@ -1,0 +1,5 @@
+package rendering.loaders;
+
+public enum LoaderStorage {
+
+}

@@ -1,0 +1,19 @@
+package rendering.loaders;
+
+import java.util.ArrayList;
+
+public enum LoaderStorage {;
+	
+	static ArrayList<VAO> vaos;
+	static ArrayList<VBO> vbos;
+	
+	public static class VAO{
+		public int id;
+		public ArrayList<VBO> vbos;
+	}
+	
+	public static class VBO{
+		public int id;
+	}
+
+}

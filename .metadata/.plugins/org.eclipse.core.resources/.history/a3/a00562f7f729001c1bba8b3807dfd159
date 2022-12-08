@@ -1,0 +1,62 @@
+package game.world.environment.styles;
+
+import org.lwjgl.opengl.GL13;
+
+import game.world.terrain.TerrainModelData;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import rendering.loaders.Loader;
+
+public enum EnvironmentStyles {
+	
+	NORMAL{
+
+		@Override
+		public Environment getEnvironment() {
+			return null;
+		}
+		
+	}
+
+	
+	;
+	
+	public static EnvironmentStyles getRandomizedStyle(LandHeightStyles landStyle, WaterHeightStyles waterStyle, FalloutHeightStyles falloutStyle) {
+		return values()[0];
+	}
+	
+	public abstract Environment getEnvironment();
+	
+	static abstract class Environment{
+		
+		protected static final int[] GL_TEXTURES = {
+			GL13.GL_TEXTURE10,
+			GL13.GL_TEXTURE11,	
+			GL13.GL_TEXTURE12,	
+			GL13.GL_TEXTURE13,	
+			GL13.GL_TEXTURE14,	
+			GL13.GL_TEXTURE15,	
+			GL13.GL_TEXTURE16,	
+			GL13.GL_TEXTURE17,	
+			GL13.GL_TEXTURE18,	
+			GL13.GL_TEXTURE19,
+		};
+		
+		/**
+		 * 
+		 * @param texNum - (0-9)
+		 * @return GL_TEXTURE[10-19]
+		 */
+		protected final int getGLTextureConstant(int texNum) {
+			if(texNum < 0 || texNum > 9) {
+				throw new IllegalArgumentException();
+			}
+			return GL13.GL_TEXTURE10+texNum;
+		}
+		
+		public abstract void loadTextures(Loader loader);
+		public abstract void activateTextures();
+		public abstract void findTextures(TerrainModelData terrain);
+	}
+}

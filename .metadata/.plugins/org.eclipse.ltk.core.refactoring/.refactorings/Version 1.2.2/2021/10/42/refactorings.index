@@ -1,0 +1,23 @@
+1633886233987	Delete element
+1633887387613	Delete element
+1633890009259	Move compilation unit
+1633890012932	Delete element
+1633895396597	Delete element
+1633895662037	Rename type 'NormalEnvironmnet'
+1633896810700	Rename type 'Conditions'
+1633897645422	Rename method 'getConditions'
+1633898999308	Rename method 'activateTextures'
+1633900105498	Rename method 'findTextures'
+1633984747209	Delete element
+1634076431226	Rename type 'T_TEX_FLAGS'
+1634157169687	Rename field 'CHUNK_LOAD'
+1634157519309	Rename type 'TerrainVars'
+1634157526037	Rename field 'terrainVars'
+1634157532877	Rename field 'terrainVariabless'
+1634236372356	Move field
+1634236433605	Move member 'SIZE'
+1634236443105	Move member 'VERTEX_COUNT'
+1634236591296	Move field
+1634236608061	Move field
+1634236616893	Move field
+1634236625847	Move field

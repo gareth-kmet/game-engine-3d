@@ -1,0 +1,172 @@
+package ai.astar;
+
+import static toolbox.Maths.clamp;
+
+import java.util.Collection;
+import java.util.HashMap;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector3f;
+
+import ai.astar.AStar.AStarEffect;
+import ai.astar.AStarGrid.AStarGridAffectingObject.NodeValue;
+
+public final class AStarGrid{
+	
+	private final Node[][] nodes;
+	private final int xSize, zSize;
+	
+	public AStarGrid(Node[][] nodes, int xSize, int zSize) {
+		this.nodes=nodes;
+		this.xSize=xSize;
+		this.zSize=zSize;
+	}
+	
+	public AStarGrid(int xSize, int zSize) {
+		this(new Node[xSize][zSize], xSize, zSize);
+	}
+	
+	public AStarGrid(int size) {
+		this(size, size);
+	}
+	
+	public AStarGrid(Node[][] grid) {
+		this(grid, grid.length, grid[0].length);
+	}
+	
+	public Node[][] nodes(){
+		return nodes;
+	}
+	
+	public int xSize() {
+		return xSize;
+	}
+	
+	public int zSize() {
+		return zSize;
+	}
+	
+	public AStarGrid fillWithEmptyNodes(float startX, float startZ, float scaleX, float scaleZ) {
+		for(int x=0; x<xSize; x++) for(int z=0; z<zSize; z++) {
+			nodes[x][z]=new Node(new Vector3f(startX+x*scaleX, 0, startZ+z*scaleZ), x,z);
+		}
+		return this;
+	}
+	
+	public AStarGrid fillAllWithEffect(int effect) {
+		for(Node[] nodes : this.nodes) for(Node node : nodes) {
+			node.penalty=effect;
+		}
+		return this;
+	}
+	
+	public static final int DEFAULT_BLUR_SIZE = 4;
+	
+	public AStarGrid blurPenalty(int blurSize) {
+		int kernelSize = blurSize*2+1;
+		int kernelExtents = (kernelSize-1)/2;
+		
+		int[][] penaltiesHorizontalPass = new int[nodes.length][nodes[0].length];
+		int[][] penaltiesVerticalPass = new int[nodes.length][nodes[0].length];
+		
+		for(int y=0; y<nodes[0].length; y++) {
+			for(int x=-kernelExtents; x<=kernelExtents; x++) {
+				int sampleX = clamp(x, 0, kernelExtents);
+				penaltiesHorizontalPass[0][y]+=nodes[sampleX][y].penalty;
+			}
+			
+			for(int x=1; x<nodes.length; x++) {
+				int removeIndex = clamp(x-kernelExtents-1,0,nodes.length);
+				int addIndex = clamp(x+kernelExtents,0,nodes.length-1);
+				
+				penaltiesHorizontalPass[x][y]=penaltiesHorizontalPass[x-1][y]-nodes[removeIndex][y].penalty+nodes[addIndex][y].penalty;
+			}
+		}
+		
+		for(int x=0; x<nodes.length; x++) {
+			for(int y=-kernelExtents; y<=kernelExtents; y++) {
+				int sampleY = clamp(y, 0, kernelExtents);
+				penaltiesVerticalPass[x][0]+=penaltiesHorizontalPass[x][sampleY];
+			}
+			
+			int blurredPenalty = Math.round((float)penaltiesVerticalPass[x][0]/(kernelSize*kernelSize));
+			nodes[x][0].penalty=blurredPenalty;
+			
+			for(int y=1; y<nodes[0].length; y++) {
+				int removeIndex = clamp(y-kernelExtents-1,0,nodes[0].length);
+				int addIndex = clamp(y+kernelExtents,0,nodes[0].length-1);
+				
+				penaltiesVerticalPass[x][y]=penaltiesVerticalPass[x][y-1]-penaltiesHorizontalPass[x][removeIndex]+penaltiesHorizontalPass[x][addIndex];
+				blurredPenalty = Math.round((float)penaltiesVerticalPass[x][y]/(kernelSize*kernelSize));
+				nodes[x][y].penalty=blurredPenalty;
+			}
+		}
+		
+		return this;
+		
+	}
+	
+	/**
+	 * 
+	 * @param grids, All grids must have the same xSize and zSize;
+	 */
+	public static AStarGrid combineGrids(AStarGrid[][] grids) {
+		int xSize = grids[0][0].xSize;
+		int zSize = grids[0][0].zSize;
+		Node[][] allNodes = new Node[xSize*grids.length][zSize*grids[0].length];
+		for(int i=0; i<grids.length; i++)for(int j=0; j<grids[i].length; j++)
+			for(int x=0; x<xSize; x++)for(int z=0; z<zSize; z++) {
+				Node oldNode = grids[i][j].nodes[x][z];
+				Node newNode = new Node(oldNode, i*xSize+x, j*zSize+z);
+				allNodes[i*xSize+x][j*zSize+z]=newNode;
+			}
+		return new AStarGrid(allNodes);
+	}
+	
+	/**
+	 * 
+	 * @param grids, All grids must have the same xSize and zSize;
+	 */
+	public static AStarGrid combineGridsWithStrandedNodeValues(AStarGrid[][] grids, HashMap<Point, Collection<NodeValue>> strandedPoints) {
+		AStarGrid grid = combineGrids(grids);
+		int xSize = grids[0][0].xSize;
+		int zSize = grids[0][0].zSize;
+		for(Point p : strandedPoints.keySet()) {
+			for(NodeValue v : strandedPoints.get(p)) {
+				int x = p.getX()*xSize+v.x;
+				int z = p.getY()*zSize+v.z;
+				if(0<=x && x<xSize  &&  0<=z && z<zSize) {
+					grid.nodes[x][z].addNodeEffect(v.astarEffect);
+				}
+			}
+		}
+		return grid;
+	}
+	
+	@Override
+	public String toString() {
+		String s="";
+		for(int i=0; i<xSize; i++) {
+			String l="";
+			for(int j=0; j<zSize; j++) {
+				l+=nodes[i][j].walkable+", ";
+			}
+			s+=l+'\n';
+		}
+		return s;
+	}
+	
+	/*
+	public AStarGrid addObject(AStarGridAffectingObject o, int x, int z) {
+		nodes[x][z].penalty+=o.getAStarEffect();
+		return this;
+	}
+	*/
+	
+	
+	public interface AStarGridAffectingObject {
+		public AStarEffect getAStarEffect();
+		public Collection<NodeValue> getAffectingNodes();
+		public static record NodeValue(int x, int z, AStarEffect astarEffect) {};
+	}
+}

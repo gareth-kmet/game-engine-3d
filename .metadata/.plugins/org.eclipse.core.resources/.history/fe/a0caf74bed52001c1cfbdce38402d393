@@ -1,0 +1,159 @@
+package game.world.environment.styles;
+
+import java.util.Random;
+
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.gameObjects.GameObject;
+import game.world.gameObjects.GameObjectRenderingConditions;
+import game.world.gameObjects.environment.EnvironmentGameObjects;
+import game.world.terrain.TerrainGenerator.Vertex;
+import rendering.loaders.Loader;
+import rendering.loaders.Loader.TEX;
+
+public class NormalEnvironment implements Environment {
+	
+	protected static final String[] TEXTURE_LOCATIONS = {
+			"res/mud",
+			"res/path",
+			"res/grassy2",
+			"res/grassy3",
+			"res/normal",
+			"sand"
+	};
+	
+	protected Loader.TEX[] textures = null;
+	
+	
+	@Override
+	public void generateTextures(Vertex[][] vertecies) {
+		for (int x = 0; x < vertecies.length; x++) {
+			for (int y = 0; y < vertecies[x].length; y++) {
+				generateTexture(vertecies, x, y);
+			}
+		}
+
+	}
+	
+	@Override
+	public void generateTexture(Vertex[][] vertecies, int x, int y) {
+		
+		int value = 
+				getTexture(x, y, vertecies).flag() |
+				getTexture(x+1, y, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x-1, y, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x, y+1, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x, y-1, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x+1, y+1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) |
+				getTexture(x-1, y+1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) |
+				getTexture(x-1, y-1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) |
+				getTexture(x+1, y-1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) ;
+		
+		if(vertecies[x][y].y >= 100) {
+			value|=TEX_FLAGS.T_TEX_4.flag(TEX_FLAGS.FULL_VALUE_FLAG);
+		}
+		
+		vertecies[x][y].textureID = 
+				TEX_FLAGS.addTexValueFlag(value); 
+		
+		
+	}
+	
+	
+	protected TEX_FLAGS getTexture(int x, int y, Vertex[][] vertecies) {
+		if(x<0 || x>=vertecies.length || y<0 || y>=vertecies[x].length) {
+			return TEX_FLAGS.T_TEX_NULL;
+		}
+		
+		Vertex v = vertecies[x][y];
+		TEX_FLAGS id;
+		
+		if(v.y>=-1 && v.y<=1 && v.normal.y >0.98f) {
+			id = TEX_FLAGS.T_TEX_5;
+		}else if(v.y >= 0) {
+			if(v.normal.y>=0.8f) {
+				id=TEX_FLAGS.T_TEX_2;
+			}else {
+				id=TEX_FLAGS.T_TEX_3;
+			}
+		}else {
+			if(v.normal.y>=0.8f) {
+				id=TEX_FLAGS.T_TEX_1;
+			}else {
+				id=TEX_FLAGS.T_TEX_0;
+			}
+		}
+		
+		return id;
+		
+	}
+	
+
+	@Override
+	public TEX[] getTextures() {
+		return textures;
+	}
+	@Override
+	public String[] getTextureLocations() {
+		return TEXTURE_LOCATIONS;
+	}
+
+	@Override
+	public void init(Loader loader) {
+		textures = Environment.loadTextures(this, loader);
+	}
+
+	@Override
+	public float getEnvironmentManipulatedHeight(float height) {
+		// TODO Auto-generated method stub
+		return height;
+	}
+
+	@Override
+	public GameObject dealWithLargeGenerationPoint(Vector3f pos, Random random) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public GameObject dealWithMediumGenerationPoint(Vector3f pos, Random random) {
+		pos.x-=1;
+		/*EntityRenderCondition treeCondition = new EntityRenderCondition() {
+			@Override
+			public boolean canRender() {
+				Vector3f dist = Vector3f.sub(e.getPosition(), MainLoopVariables.getPlayer().getPosition(), new Vector3f());
+				float distSqr = dist.lengthSquared();
+				return distSqr<600*600;
+			}
+			@Override
+			public boolean canUseNormalMap() {
+				Vector3f dist = Vector3f.sub(e.getPosition(), MainLoopVariables.getPlayer().getPosition(), new Vector3f());
+				float distSqr = dist.lengthSquared();
+				return distSqr<1000*1000;
+			}
+			@Override
+			public float getResolution() {
+				Vector3f dist = Vector3f.sub(e.getPosition(), MainLoopVariables.getPlayer().getPosition(), new Vector3f());
+				float distSqr = dist.lengthSquared();
+				return EntityRenderCondition.ResolutionCondition.USE_EXPONETIAL_MORE_LOW_THAN_HIGH.getResolutionPercent(distSqr, 600);
+			}
+		};
+		e.addRenderCondition(treeCondition);*/
+//		GameObject tree = EnvironmentGameObjects.APPLE_TREE.create(null, pos, new Vector3f(), 100);
+//		GameObject tree = EnvironmentGameObjects.BOULDER.create(null, pos, new Vector3f(), 1f);
+		pos.y+=23;
+		GameObject tree = EnvironmentGameObjects.BOX.create(null, pos, new Vector3f(0,45,0), 10f);
+		tree.addAllRenderCondition(GameObjectRenderingConditions.DISTANCE_TO_PLAYER.getForGameObject(tree, 400f));
+		
+		return tree;
+	}
+
+	@Override
+	public GameObject dealWithSmallGenerationPoint(Vector3f pos, Random random) {
+		//return new Entity(TexturedModels.GRASS, pos, 0, 0, 0, 3);
+		return null;
+	}
+
+	
+
+}

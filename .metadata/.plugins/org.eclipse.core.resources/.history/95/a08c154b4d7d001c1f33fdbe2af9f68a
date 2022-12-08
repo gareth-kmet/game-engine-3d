@@ -1,0 +1,152 @@
+package game.world.environment.styles;
+
+import java.util.Random;
+
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.gameObjects.GameObject;
+import game.world.gameObjects.environment.AppleTree;
+import game.world.terrain.TerrainGenerator.Vertex;
+import game.world.terrain.TerrainVariables.Water;
+import rendering.loaders.Loader;
+import rendering.loaders.Loader.TEX;
+
+public class NormalEnvironment implements Environment {
+	
+	protected static final String[] TEXTURE_LOCATIONS = {
+			"res/mud",
+			"res/path",
+			"res/grassy2",
+			"res/grassy3",
+			"res/normal",
+			"sand"
+	};
+	
+	protected static final int CONTAINS_NORMAL_TEXTURES = 0b000000;
+	
+	protected Loader.TEX[] textures = null;
+	protected Loader.TEX[] normalTextures = null;
+	
+	
+	
+	@Override
+	public void generateTextures(Vertex[][] vertecies) {
+		for (int x = 0; x < vertecies.length; x++) {
+			for (int y = 0; y < vertecies[x].length; y++) {
+				generateTexture(vertecies, x, y);
+			}
+		}
+
+	}
+	
+	@Override
+	public void generateTexture(Vertex[][] vertecies, int x, int y) {
+		
+		int value = 
+				getTexture(x, y, vertecies).flag() |
+				getTexture(x+1, y, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x-1, y, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x, y+1, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x, y-1, vertecies).flag(TEX_FLAGS.HALF_VALUE_FLAG) |
+				getTexture(x+1, y+1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) |
+				getTexture(x-1, y+1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) |
+				getTexture(x-1, y-1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) |
+				getTexture(x+1, y-1, vertecies).flag(TEX_FLAGS.QUATER_VALUE_FLAG) ;
+		
+		if(vertecies[x][y].y >= 100) {
+			value|=TEX_FLAGS.T_TEX_4.flag(TEX_FLAGS.FULL_VALUE_FLAG);
+		}
+		
+		vertecies[x][y].textureID = 
+				TEX_FLAGS.addTexValueFlag(value); 
+	
+	}
+	
+	
+	protected TEX_FLAGS getTexture(int x, int y, Vertex[][] vertecies) {
+		if(x<0 || x>=vertecies.length || y<0 || y>=vertecies[x].length) {
+			return TEX_FLAGS.T_TEX_NULL;
+		}
+		
+		Vertex v = vertecies[x][y];
+		TEX_FLAGS id;
+		
+		if(v.y>=-1 && v.y<=1 && v.normal.y >0.98f) {
+			id = TEX_FLAGS.T_TEX_5;
+		}else if(v.y >= 0) {
+			if(v.normal.y>=0.8f) {
+				id=TEX_FLAGS.T_TEX_2;
+			}else {
+				id=TEX_FLAGS.T_TEX_3;
+			}
+		}else {
+			if(v.normal.y>=0.8f) {
+				id=TEX_FLAGS.T_TEX_1;
+			}else {
+				id=TEX_FLAGS.T_TEX_0;
+			}
+		}
+		
+		return id;
+		
+	}
+	
+
+	@Override
+	public TEX[] getTextures() {
+		return textures;
+	}
+	@Override
+	public TEX[] getNormalTextures() {
+		return normalTextures;
+	}
+	@Override
+	public int getHasNormalTextures() {
+		return CONTAINS_NORMAL_TEXTURES;
+	}
+	@Override
+	public String[] getTextureLocations() {
+		return TEXTURE_LOCATIONS;
+	}
+
+	@Override
+	public void init(Loader loader) {
+		textures = Environment.loadTextures(this, loader);
+	}
+
+	@Override
+	public float getEnvironmentManipulatedHeight(float height) {
+		return 2*height;
+	}
+
+	@Override
+	public GameObject dealWithLargeGenerationPoint(Vector3f pos, Random random) {
+		return null;
+	}
+
+	@Override
+	public GameObject dealWithMediumGenerationPoint(Vector3f pos, Random random) {
+		
+		if(pos.y < Water.HEIGHT+1)return null;
+		
+		int rot = random.nextInt(360);
+		float height = random.nextFloat(6f/0.411257f, 9f/0.411257f); // 0.411257 is the height of the obj file - should be changed to be found by a collision box later
+		GameObject tree = new AppleTree(pos, new Vector3f(0,rot,0), height);
+		return tree;
+//		return null;
+	}
+
+	@Override
+	public GameObject dealWithSmallGenerationPoint(Vector3f pos, Random random) {
+		if(pos.y < Water.HEIGHT+1) {
+			return null;
+		}
+		float index = random.nextFloat(0,4);
+		
+//		return new Fern(pos, new Vector3f(), 0.1f, (int)index);
+		return null;
+	}
+ 
+	
+
+}

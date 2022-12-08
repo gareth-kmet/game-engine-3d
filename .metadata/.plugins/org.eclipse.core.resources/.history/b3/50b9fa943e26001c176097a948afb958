@@ -1,0 +1,7 @@
+package game.world;
+
+import game.GameLoopManager;
+
+public interface WorldLoopManager extends GameLoopManager{
+
+}

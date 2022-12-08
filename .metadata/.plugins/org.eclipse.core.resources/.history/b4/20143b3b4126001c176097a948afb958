@@ -1,0 +1,66 @@
+package game.world.terrain;
+
+import java.util.Random;
+
+import org.lwjgl.util.vector.Vector3f;
+
+import entities.Player;
+import game.world.WorldLoopManager;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import mainLoop.MainLoopVariables;
+
+public class TerrainManager implements WorldLoopManager {
+	
+	private TerrainGenerator generator;
+	private LandHeightStyles landStyle;
+	private WaterHeightStyles waterStyle;
+	private final int seed;
+	
+	public TerrainManager(int seed) {
+		this.seed=seed;
+	}
+
+	@Override
+	public void create(Random random) {
+		
+		landStyle = LandHeightStyles.getRandomizedStyle(random);
+		waterStyle = WaterHeightStyles.getRandomizedStyle(random, landStyle);
+		
+		generator = new TerrainGenerator(landStyle, waterStyle);
+		generator.generate(seed);
+
+	}
+
+	@Override
+	public void update() {
+		// TODO Auto-generated method stub
+
+	}
+	
+	private void updatePlayerPos() {
+		Player player = MainLoopVariables.getPlayer();
+		Vector3f pos = player.getPosition();
+		
+		int tx = (int) (pos.x / TerrainVariables.SIZE);
+		int tz = (int) (pos.z / TerrainVariables.SIZE);
+		
+		if(tx<0 || tx>=TerrainVariables.TERRAIN_COUNT || tz<0 || tz>=TerrainVariables.TERRAIN_COUNT) {
+			
+		}
+		
+		Terrain terrain = terrains[tx][tz];
+		
+		float fx = pos.x % TerrainVariables.SIZE;
+		float fz = pos.z % TerrainVariables.SIZE;
+		
+		return terrain.getHeightOfTerrain(fx, fz);
+	}
+
+	@Override
+	public void destroy() {
+		// TODO Auto-generated method stub
+
+	}
+
+}

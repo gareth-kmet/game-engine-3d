@@ -1,0 +1,22 @@
+package game.world;
+
+import java.util.Random;
+
+public class WorldRandomStyles {
+	
+	private Random random = new Random();
+	
+	public enum Styles implements WorldStyles{
+		LAND_HEIGHT,
+		WATER_DEPTH,
+	}
+	
+	public static interface WorldStyles{
+		
+		
+		
+		
+		
+	}
+
+}

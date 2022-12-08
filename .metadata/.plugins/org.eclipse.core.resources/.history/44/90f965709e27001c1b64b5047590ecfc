@@ -1,0 +1,26 @@
+package game.world;
+
+import java.util.ArrayList;
+
+public class WorldLoaderThread extends Thread{
+	
+	ArrayList<WorldLoaderRequest> requests = new ArrayList<WorldLoaderRequest>();
+	boolean stop=false;
+	
+	@Override
+	public synchronized void start() {
+		stop=false;
+		super.start();
+	}
+	
+	@Override
+	public void run() {
+		while(!stop) {
+			if(requests.isEmpty()) {
+				yield();
+				
+			}
+		}
+	}
+
+}

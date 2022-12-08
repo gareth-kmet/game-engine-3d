@@ -1,0 +1,17 @@
+package game.world;
+
+import java.util.ArrayList;
+
+public class WorldRandomStyles {
+	
+	ArrayList<WorldStyles> styles = new ArrayList<WorldStyles>();
+	
+	
+	
+	
+	public static interface WorldStyles{
+		
+		
+	}
+
+}

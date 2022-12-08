@@ -1,0 +1,71 @@
+package game.world.terrain;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import mainLoop.MainLoopVariables;
+
+public class TerrainStorage {
+	
+	private final HashMap<Integer, HashMap<Integer, Terrain>> terrains = new HashMap<Integer, HashMap<Integer, Terrain>>();
+	private boolean careAboutMemory = true;
+	
+	private HashSet<Terrain> lastRendered = new HashSet<Terrain>();
+	
+	void renderTerrains(HashSet<Terrain> terrains) {
+		
+		for(Terrain t : terrains) {
+			if(lastRendered.contains(t)) {
+				lastRendered.remove(t);
+				continue;
+			}
+			
+			MainLoopVariables.getTerrains().add(t);
+		}
+		
+		for(Terrain t : lastRendered) {
+			MainLoopVariables.getTerrains().remove(t);
+			
+			if(careAboutMemory) {
+				
+			}
+			
+		}
+		
+		lastRendered=terrains;
+	}
+	
+	void removeTerrain(int x, int z, Terrain terrain) {
+		
+		HashMap<Integer, Terrain> stepIn = terrains.get(x);
+		if(stepIn==null)return;
+		
+		Terrain t = stepIn.get(z);
+		if(t==null || t != terrain)return;
+		
+		stepIn.remove(t);
+		
+		if(stepIn.isEmpty()) {
+			terrains.remove(stepIn);
+		}
+		
+		
+	}
+	
+	void setTerrain(int x, int z, Terrain terrain) {
+		HashMap<Integer, Terrain> stepIn = terrains.get(x);
+		if(stepIn==null) {
+			stepIn = new HashMap<Integer, Terrain>();
+			terrains.put(x, stepIn);
+		}
+		stepIn.put(z, terrain);
+	}
+	
+	Terrain getTerrain(int x, int z) {
+		HashMap<Integer, Terrain> stepIn = terrains.get(x);
+		if(stepIn==null)return null;
+		return stepIn.get(z);
+	}
+
+}

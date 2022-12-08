@@ -1,0 +1,42 @@
+1642471614588	Change method 'getResolutionPercent'
+1642540766042	Delete element
+1642543111251	Rename type 'TestObject'
+1642543126061	Move type 'AfraidBullAnimal' to new file
+1642543140331	Move compilation unit
+1642739018179	Rename method 'barryCentric'
+1642739873195	Delete element
+1642799969275	Move compilation units
+1642799973956	Move compilation unit
+1642799984539	Move compilation units
+1642799989187	Delete element
+1642800058725	Move compilation units
+1642800068749	Move compilation unit
+1642800074434	Move compilation units
+1642800091624	Delete element
+1642800114515	Move compilation units
+1642800132680	Move compilation units
+1642800138488	Delete elements
+1642805682843	Rename method 'apply'
+1642805694932	Rename method 'apply'
+1642805704373	Rename method 'apply'
+1642805710697	Rename method 'applyHunger'
+1642809182850	Move member 'AffectedByHealth'
+1642809190321	Move member 'HealthAffecting'
+1642809196627	Move member 'AffectedByThirst'
+1642809202475	Move member 'ThirstAffecting'
+1642809207713	Move member 'AffectedByHunger'
+1642809213121	Move member 'HungerAffecting'
+1642809258041	Move member 'CanDie'
+1642809262181	Move member 'CanKill'
+1642809266189	Move member 'Drops'
+1642810603363	Rename package 'physics.collisions'
+1642810610648	Move packages
+1642810615190	Delete element
+1642811049436	Rename type 'Physics'
+1642811065840	Rename type 'Phriority'
+1642811188917	Delete element
+1642812015306	Delete element
+1642827630036	Rename type 'MovementNonAffectingCollisionTest'
+1642892668742	Infer generic type arguments
+1642893968599	Rename method 'set'
+1642895687182	Rename type 'MoveableCollidable'

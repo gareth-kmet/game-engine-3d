@@ -1,0 +1,17 @@
+1640649406625	Rename field 'noramlsExist'
+1640662018973	Move compilation unit
+1640662029919	Move compilation unit
+1640662035084	Move compilation unit
+1640662051581	Move compilation unit
+1640662786128	Rename type 'ModelAnimation'
+1640662802075	Rename method 'unUseAll'
+1640671982090	Rename method 'useMaterial'
+1640737358629	Delete element
+1640737364919	Copy compilation unit
+1640737605685	Delete element
+1640823942174	Rename type 'Enums'
+1640827046386	Delete element
+1640898495006	Rename method 'insertAnimationAfterCurrentAnimation'
+1640898531864	Rename method 'forceAnimation'
+1640909977544	Rename method 'createAnimationForInbetween'
+1640991900786	Rename method 'isAnimation'

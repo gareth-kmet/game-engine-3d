@@ -1,0 +1,5 @@
+package game.world.environment;
+
+public class EnvironmentStyles {
+
+}

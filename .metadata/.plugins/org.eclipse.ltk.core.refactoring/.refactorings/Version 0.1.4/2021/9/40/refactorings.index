@@ -1,0 +1,21 @@
+1632772185984	Delete element
+1632772191032	Delete element
+1632772195782	Delete element
+1632772201071	Delete element
+1632772250876	Rename type 'NormalMappingRenderer'
+1632772278424	Rename type 'NormalMappingShader'
+1632772298674	Rename type 'EntitiyShader'
+1632772309533	Rename resource 'normalMapFShader.txt'
+1632772318037	Rename resource 'normalMapVShader.txt'
+1632772333122	Rename type 'MasterRenderer'
+1632772456150	Rename type 'EntityRenderer'
+1632772465891	Rename type 'Renderer'
+1632772472530	Rename type 'Shader'
+1632772876329	Delete element
+1632772881245	Move compilation unit
+1632772891767	Rename type 'MasterEntityRenderer'
+1632774224284	Rename field 'renderer'
+1632775710827	Rename compilation unit 'package-info.java'
+1632775741418	Rename compilation unit 'rendering.java'
+1632775756824	Delete element
+1632871594951	Rename package 'rendering.postProcessing.outline'

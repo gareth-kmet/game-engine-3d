@@ -1,0 +1,122 @@
+package mainLoop;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+
+import entities.Camera;
+import entities.Entity;
+import entities.Light;
+import entities.Player;
+import game.world.terrain.Terrain;
+import rendering.MasterRenderer;
+import rendering.font.TextMaster;
+import rendering.guis.GuiTexture;
+import rendering.loaders.Loader;
+import rendering.loaders.ObjLoader;
+import rendering.models.RawModel;
+import rendering.models.TexturedModel;
+import rendering.models.textures.ModelTexture;
+import rendering.water.WaterTile;
+
+public final class MainLoop {
+	
+	static Map<TexturedModel,List<Entity>> entities;
+	static List<Terrain> terrains;
+	static List<WaterTile> waters;
+	static List<Light> lights;
+	static List<GuiTexture> guis;
+	
+	static Light sun;
+	static Camera camera;
+	static Player player;
+	static GuiTexture outlineGUI;
+	
+	static Loader loader;
+	
+	static LoopManager.Managers nextManager = LoopManager.Managers.GAME;
+	static LoopManager currentManager;
+	
+	static MasterRenderer renderer;
+	
+	
+	private static void init() {
+		entities = new HashMap<TexturedModel, List<Entity>>();
+		terrains = new ArrayList<Terrain>();
+		waters = new ArrayList<WaterTile>();
+		lights = new ArrayList<Light>();
+		guis = new ArrayList<GuiTexture>();
+		
+		DisplayManager.createDisplay();
+		loader = new Loader();
+		
+		RawModel playerModel = ObjLoader.loadOBJ("res/person", loader);
+		TexturedModel playerTexModel = new TexturedModel(playerModel, new ModelTexture(loader.loadGameTexture("res/playerTexture")));
+		player = new Player(playerTexModel, new Vector3f(0,0,0),0,180,0,0.6f);
+		MainLoopVariables.addEntity(player);
+		
+		camera = new Camera(player);
+		
+		renderer = new MasterRenderer(loader, camera);
+		outlineGUI = renderer.createOutlineGui();
+		guis.add(outlineGUI);
+		
+		runLoopManager();
+		
+		
+	}
+	
+	private static void runLoopManager() {
+		while(nextManager != null && !Display.isCloseRequested()) {
+			currentManager = nextManager.getManagerNewInstant();
+			currentManager.create();
+			nextManager = null;
+			runLoop();
+			currentManager.cleanUp();
+			currentManager = null;
+		}
+	}
+	
+	private static void runLoop() {
+		
+		while(!Display.isCloseRequested() && currentManager.loopBoolean()) {
+			
+			
+			if(Display.wasResized()) {
+				renderer.cleanUp();
+				renderer = new MasterRenderer(loader, camera);
+				guis.remove(outlineGUI);
+				outlineGUI = renderer.createOutlineGui();
+				guis.add(outlineGUI);
+				GL11.glViewport(0, 0, Display.getWidth(), Display.getHeight());
+			}
+			
+			
+			currentManager.loopStep();
+			
+			renderer.render(entities, terrains, lights, waters, guis, camera, new Vector4f(0,-1,0,10000), player, sun);
+			
+			DisplayManager.updateDisplay();
+		}
+	}
+	
+	private static void end() {
+		currentManager.cleanUp();
+		renderer.cleanUp();
+		loader.cleanUp();
+		DisplayManager.closeDisplay();
+	}
+	
+	public static void main(String[] args) {
+		init();
+		end();
+	}
+	
+
+}

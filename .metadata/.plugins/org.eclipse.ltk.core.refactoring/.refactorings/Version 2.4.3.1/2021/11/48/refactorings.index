@@ -1,0 +1,23 @@
+1637452885108	Move compilation unit
+1637454693655	Rename compilation unit 'FurthestPointSphereLoader.java'
+1637455170842	Rename field 'currentLoader'
+1637533250183	Rename field 'zMouvement'
+1637533256075	Rename field 'yMouvement'
+1637533263693	Rename field 'xMouvement'
+1637533330696	Rename type 'PhysicsMouvement'
+1637533338876	Rename method 'getAppliedMouvementToPosition'
+1637533346528	Rename method 'getAppliedMouvementToPosition'
+1637533417099	Rename method 'addMouvement'
+1637716562287	Rename type 'FurthestPointSphere'
+1637716575036	Rename type 'FurthestPointSphere'
+1637717055051	Infer generic type arguments
+1637728866669	Delete element
+1637787490126	Copy compilation unit
+1637790461287	Rename method 'getBoundingDistance'
+1637796944417	Change method 'getMinBoundsClone'
+1637796953704	Change method 'getMaxBoundsClone'
+1637797156100	Change method 'finish'
+1637813319002	Delete element
+1637815331702	Rename type 'VerticalSegmentedBoundingBoxs'
+1637862627759	Rename type 'SegmentedBoundingBoxs'
+1637862913051	Rename type 'SegmentedCollisionDatas'

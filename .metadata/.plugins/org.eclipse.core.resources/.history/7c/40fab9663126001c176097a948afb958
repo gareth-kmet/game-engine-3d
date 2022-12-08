@@ -1,0 +1,34 @@
+package game.world.styles;
+
+import java.util.ArrayList;
+
+public class WorldRandomStyles {
+	
+	protected static final WorldRandomStyles[] worldRandomStyles = new WorldRandomStyles[5];
+	
+	protected static final byte 
+		LAND_HEIGHTS 	= 	0b00001,
+		WATER_DEPTHS	=	0b00010;
+
+	protected final byte type;
+	
+	protected WorldRandomStyles(byte type) {
+		this.type=type;
+		styles.add(this);
+	}
+	
+	public static class WorldRandomStylesMaster{
+		
+		final ArrayList<WorldRandomStyles> worldRandomStyles;
+		
+		public WorldRandomStylesMaster() {
+			
+		}
+	}
+	
+	
+	protected interface WorldStyles{
+		
+	}
+
+}

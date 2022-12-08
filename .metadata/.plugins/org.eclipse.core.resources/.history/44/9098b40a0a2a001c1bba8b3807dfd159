@@ -1,0 +1,70 @@
+package game.world.terrain;
+
+import java.util.Random;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.WorldLoopManager;
+import game.world.WorldRandomStyles;
+import game.world.environment.styles.EnvironmentStyles;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import mainLoop.MainLoopVariables;
+
+public class TerrainManager implements WorldLoopManager {
+	
+	private TerrainGenerator generator;
+	private final int seed;
+	
+	private Point lastPlayerChunk;
+	
+	public TerrainManager(int seed) {
+		this.seed=seed;
+	}
+
+	@Override
+	public void create(Random random, RenderConditions[] styles) {
+		
+		
+		generator = new TerrainGenerator(
+				(LandHeightStyles)WorldRandomStyles.getStyle(styles, WorldRandomStyles.LAND_HEIGHT_STYLE), 
+				(WaterHeightStyles)WorldRandomStyles.getStyle(styles, WorldRandomStyles.WATER_HEIGHT_STYLE), 
+				(FalloutHeightStyles)WorldRandomStyles.getStyle(styles, WorldRandomStyles.FALLOUT_STYLE), 
+				(EnvironmentStyles)WorldRandomStyles.getStyle(styles, WorldRandomStyles.EVIRONMENT_STYLE)
+		);
+		
+		lastPlayerChunk = getPlayerChunk();
+		
+		generator.generate(seed, lastPlayerChunk);
+		generator.updateGeneration();
+		generator.updateWaters(lastPlayerChunk, lastPlayerChunk);
+	}
+
+	@Override
+	public void update() {
+		Point currentPlayerChunk = getPlayerChunk();
+		if(!currentPlayerChunk.equals(lastPlayerChunk)) {
+			generator.generate(seed, currentPlayerChunk);
+			generator.updateWaters(currentPlayerChunk, lastPlayerChunk);
+			lastPlayerChunk = currentPlayerChunk;
+		}
+		generator.updateGeneration();
+	}
+	
+	private Point getPlayerChunk() {
+		Vector3f pos = MainLoopVariables.getPlayer().getPosition();
+		int tx = (int) Math.floor (pos.x / TerrainVariables.SIZE);
+		int tz = (int) Math.floor(pos.z / TerrainVariables.SIZE);
+		return new Point(tx,tz);
+	}
+
+	@Override
+	public void destroy() {
+		// TODO Auto-generated method stub
+
+	}
+
+}

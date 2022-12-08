@@ -1,0 +1,56 @@
+package game.world.environment.styles;
+
+import game.world.terrain.TerrainModelData;
+import rendering.loaders.Loader;
+import rendering.loaders.Loader.TEX;
+
+public class NormalEnvironment implements Environment {
+	
+	protected static final String[] TEXTURE_LOCATIONS = {
+			"res/mud",
+			"res/path",
+			"res/grassy2",
+			"res/grassy3"
+	};
+	
+	protected Loader.TEX[] textures = null;
+	
+	@Override
+	public void generateTextureVBO(TerrainModelData terrain) {
+		for (int i = 0; i < terrain.count; i++) {
+			int id;
+			
+			if(terrain.vertices[i*3+1]>=0) {
+				if(terrain.normals[i*3+1]>=0.8) {
+					id=2;
+				}else {
+					id=3;
+				}
+			}else {
+				if(terrain.normals[i*3+1]>=0.8) {
+					id=1;
+				}else {
+					id=0;
+				}
+			}
+			
+			terrain.textureColours[i]=id;
+		}
+
+	}
+
+	@Override
+	public TEX[] getTextures() {
+		return textures;
+	}
+	@Override
+	public String[] getTextureLocations() {
+		return TEXTURE_LOCATIONS;
+	}
+
+	@Override
+	public void init(Loader loader) {
+		textures = Environment.loadTextures(this, loader);
+	}
+
+}

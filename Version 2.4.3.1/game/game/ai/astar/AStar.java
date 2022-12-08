@@ -1,0 +1,163 @@
+package game.ai.astar;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import toolbox.ToolBox;
+
+
+public class AStar {
+	
+	public static AStarResult run(Node[][] grid, Node start, Node end, AStarCaller caller) {
+		
+		for(Node[] row : grid) {
+			for(Node node : row) {
+				node.resetData();
+				node.gCost=0;
+				node.hCost=getDistanceBetweenNodes(node, end);
+			}
+		}
+		Heap<Node> openNodes = new Heap<Node>(grid.length*grid[0].length, new Node[0]);
+		HashSet<Node> closedNodes = new HashSet<Node>();
+		
+		Vector3f[] waypoints = new Vector3f[0];
+		
+		openNodes.add(start);
+		closedNodes.clear();
+		
+		boolean success = false;
+		
+		while(openNodes.getCount()>0) {
+			
+			
+			Node currentNode = openNodes.removeFirst();
+//			System.out.println("current "+currentNode.toString());
+			closedNodes.add(currentNode);
+			
+			if(currentNode==end) {
+				success=true;
+				break;
+			}
+			
+			for(Node neighbour : currentNode.getNeighbours(grid)) {
+				
+				if(!neighbour.walkable || closedNodes.contains(neighbour)) {
+					continue;
+				}
+				int newCostToNeighbour = currentNode.gCost+neighbour.penalty+getDistanceBetweenNodes(currentNode, neighbour);
+				boolean contains = openNodes.contains(neighbour);
+				if(newCostToNeighbour<neighbour.gCost || !contains) {
+					neighbour.gCost=newCostToNeighbour;
+					neighbour.hCost=getDistanceBetweenNodes(neighbour, end);
+					neighbour.parent=currentNode;
+					if(!contains) {
+						openNodes.add(neighbour);
+						
+					}else {
+						openNodes.updateItem(neighbour);
+					}
+				}
+				
+			}
+			
+			
+		}
+		ArrayList<Node> path = new ArrayList<Node>();
+		if(success) {
+			waypoints = retracePath(start, end, path);
+		}
+	
+		
+		Collections.reverse(path);
+		AStarResult result = new AStarResult(success, waypoints, path, start.worldPos, end.worldPos);
+		if(caller!=null)caller.call(success, waypoints, path);
+//		System.out.println(toString(result, grid));
+		return result;
+	}
+	
+	@SuppressWarnings("unused")
+	private static String toString(AStarResult result, Node[][] grid) {
+		String s = "";
+		for(int x=0; x<grid.length; x++) {
+			String l="";
+			zLoop:for(int z=0; z<grid[x].length;z++) {
+				Node n = grid[x][z];
+				
+				for(Vector3f pos : result.waypoints) {
+					if(pos.equals(n.worldPos)) {
+						l+="WAYPOINT,";
+						continue zLoop;
+					}
+				}
+				if(result.nodePath.contains(n)) {
+					l+="PATH,";
+				}else if(!n.walkable) {
+					l+="NOT_WALKABLE,";
+				}else {
+					l+=n.penalty+",";
+				}
+			}
+			s+=l+'\n';
+		}
+		return s;
+	}
+	
+	private static Vector3f[] retracePath(Node startNode, Node endNode, ArrayList<Node> path) {
+		if(path==null) path=new ArrayList<Node>();
+		Node currentNode=endNode;
+		
+		while(currentNode!=startNode) {
+			path.add(currentNode);
+			currentNode=currentNode.parent;
+		}
+		Vector3f[] waypoints = simplifyPath(path);
+		ToolBox.reverseArray(waypoints);
+		return waypoints;
+		
+	}
+	
+	private static Vector3f[] simplifyPath(ArrayList<Node> path) {
+		ArrayList<Vector3f> waypoints = new ArrayList<Vector3f>();
+		if(path.size()==0) {
+			waypoints.add(path.get(0).worldPos);
+		}else {
+			Vector2f directionOld = new Vector2f();
+			
+			for(int i=1; i<path.size(); i++) {
+				Vector2f directionNew = new Vector2f(path.get(i-1).x-path.get(i).x, path.get(i-1).y-path.get(i).y);
+				if(!directionNew.equals(directionOld)) {
+					waypoints.add(path.get(i-1).worldPos);
+				}
+				directionOld = directionNew;
+			}
+			
+			if(waypoints.get(waypoints.size()-1)!=path.get(path.size()-1).worldPos)
+				waypoints.add(path.get(path.size()-1).worldPos);
+		}
+		return waypoints.toArray(new Vector3f[waypoints.size()]);
+	}
+	
+	
+	
+	private static int getDistanceBetweenNodes(Node a, Node b) {
+		int x = Math.abs(a.x-b.x);
+		int y = Math.abs(a.y-b.y);
+		if(x>y)return 14*y+10*(x-y);
+		return 14*x+10*(y-x);
+	}
+	
+	public static record AStarResult(boolean success, Vector3f[] waypoints, ArrayList<Node> nodePath, Vector3f startPoint, Vector3f endPoint) {};
+	public static record AStarEffect(boolean walkable, int penalty) {
+		public static final AStarEffect NULL_EFFECT = new AStarEffect(true, 0);
+		public static final AStarEffect DEFAULT_COLLISION_EFFECT = new AStarEffect(false, AStarEffect.ASTAR_COLLISION_VALUE);
+		public static final int ASTAR_COLLISION_VALUE = 100;
+	};
+	
+	public static interface AStarCaller{
+		public void call(boolean success, Vector3f[] waypoints, ArrayList<Node> solution);
+	}
+
+}

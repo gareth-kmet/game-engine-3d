@@ -1,0 +1,63 @@
+package game.world.terrain;
+
+import java.util.Random;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.WorldLoopManager;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import mainLoop.MainLoopVariables;
+
+public class TerrainManager implements WorldLoopManager {
+	
+	private TerrainGenerator generator;
+	private LandHeightStyles landStyle;
+	private WaterHeightStyles waterStyle;
+	private final int seed;
+	
+	private Point lastPlayerChunk;
+	
+	public TerrainManager(int seed) {
+		this.seed=seed;
+	}
+
+	@Override
+	public void create(Random random) {
+		
+		landStyle = LandHeightStyles.getRandomizedStyle(random);
+		waterStyle = WaterHeightStyles.getRandomizedStyle(random, landStyle);
+		
+		generator = new TerrainGenerator(landStyle, waterStyle);
+		
+		lastPlayerChunk = getPlayerChunk();
+		
+		generator.generate(seed, lastPlayerChunk);
+		generator.updateWaters(lastPlayerChunk, lastPlayerChunk);
+
+	}
+
+	@Override
+	public void update() {
+		Point newChunk = getPlayerChunk();
+		if(newChunk.getX()!=lastPlayerChunk.getX() || newChunk.getY()!=lastPlayerChunk.getY()) {
+			
+		}
+	}
+	
+	private Point getPlayerChunk() {
+		Vector3f pos = MainLoopVariables.getPlayer().getPosition();
+		int tx = (int) (pos.x / TerrainVariables.SIZE);
+		int tz = (int) (pos.z / TerrainVariables.SIZE);
+		return new Point(tx,tz);
+	}
+
+	@Override
+	public void destroy() {
+		// TODO Auto-generated method stub
+
+	}
+
+}

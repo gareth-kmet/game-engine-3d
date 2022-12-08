@@ -1,0 +1,451 @@
+package game.world.terrain;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import game.world.WorldLoaderThread;
+import game.world.WorldVariables;
+import game.world.environment.styles.Environment;
+import game.world.terrain.heights.Height;
+import game.world.terrain.heights.Noise;
+import mainLoop.MainLoopVariables;
+import rendering.water.WaterTile;
+
+public class TerrainGenerator {
+	
+	private final WorldVariables worldVariables;
+
+	final ArrayList<WaterTile> waterTiles = new ArrayList<WaterTile>();
+	
+	private final TerrainStorage storage;
+	
+	private TerrainGenerationRequest nextTerrainRequest = null;
+	private TerrainGenerationRequest currentTerrainRequest = null;
+
+	public int octaves=4;
+	
+	TerrainGenerator(WorldVariables variables) {
+		
+		worldVariables=variables;
+		
+		storage = new TerrainStorage();
+		
+		for(int x = -worldVariables.terrainVariables.CHUNK_LOAD; x<=worldVariables.terrainVariables.CHUNK_LOAD; x++) {
+			for(int z = -worldVariables.terrainVariables.CHUNK_LOAD; z<=worldVariables.terrainVariables.CHUNK_LOAD; z++) {
+				for(int xx = 0; xx<10; xx++) {
+					for(int zz=0; zz<10; zz++) {
+						WaterTile water = new WaterTile(WorldVariables.TerrainVariables.SIZE*(x+(xx+0.5f)/10f), WorldVariables.TerrainVariables.SIZE*(z+(zz+0.5f)/10f), TerrainVariables.Water.HEIGHT);
+						waterTiles.add(water);
+						MainLoopVariables.getWaters().add(water);
+					}
+				}
+			}
+		}
+	}
+	
+	void generate(int seed, Point playerChunk) {
+		
+		if(nextTerrainRequest!=null) {
+			nextTerrainRequest.removeFromThread(); // just incase it somehow did get threaded
+		}
+		nextTerrainRequest = new TerrainGenerationRequest(playerChunk);
+		
+	}
+	
+	void updateGeneration() {
+		
+		if(currentTerrainRequest!=null) {
+			if(currentTerrainRequest.isComplete()) {
+				currentTerrainRequest.finish();
+				currentTerrainRequest=null;
+			}
+		}
+		
+		if(currentTerrainRequest==null && nextTerrainRequest != null) {
+			currentTerrainRequest = nextTerrainRequest;
+			nextTerrainRequest=null;
+			currentTerrainRequest.prepare();
+			currentTerrainRequest.thread();
+			
+		}
+		
+		
+	}
+	
+	void updateWaters(Point newPlayerChunk, Point oldPlayerChunk) {
+		int xDif = newPlayerChunk.getX()-oldPlayerChunk.getX();
+		xDif *= WorldVariables.TerrainVariables.SIZE;
+		int zDif = newPlayerChunk.getY()-oldPlayerChunk.getY();
+		zDif *= WorldVariables.TerrainVariables.SIZE;
+		for(WaterTile water : waterTiles) {
+			water.setX(water.getX()+xDif);
+			water.setZ(water.getZ()+zDif);
+			updateWaterRendering(water, newPlayerChunk);
+		}
+	}
+	
+	private void updateWaterRendering(WaterTile water, Point playerChunk) {
+		int x = (int) Math.floor(water.getX()/WorldVariables.TerrainVariables.SIZE);
+		int z = (int) Math.floor(water.getZ()/WorldVariables.TerrainVariables.SIZE);
+		x-=playerChunk.getX();
+		z-=playerChunk.getY();
+		
+		if(x*x+z*z>worldVariables.terrainVariables.CHUNK_LOAD_SQR) {
+			MainLoopVariables.getWaters().remove(water);
+		}else if(!MainLoopVariables.getWaters().contains(water)) {
+			MainLoopVariables.getWaters().add(water);
+		}
+	}
+	
+	
+	
+	
+	private class TerrainGenerationRequest extends WorldLoaderThread.Request{
+		
+		private final Point playerChunk;
+		private final Terrain[] terrains;
+		private final TerrainModelData[] models;
+		private boolean prepared = false;
+		
+		private TerrainGenerationRequest(Point playerPos) {
+			this.playerChunk=playerPos;
+			terrains = new Terrain[(2*worldVariables.terrainVariables.CHUNK_LOAD+1)*(2*worldVariables.terrainVariables.CHUNK_LOAD+1)];
+			models = new TerrainModelData[terrains.length];
+		}
+		
+		private void prepare() {
+			for(int i=0, tx = playerChunk.getX()-worldVariables.terrainVariables.CHUNK_LOAD; tx<=playerChunk.getX()+worldVariables.terrainVariables.CHUNK_LOAD; tx++) {
+				for(int tz = playerChunk.getY()-worldVariables.terrainVariables.CHUNK_LOAD; tz<=playerChunk.getY()+worldVariables.terrainVariables.CHUNK_LOAD; tz++, i++) {
+					terrains[i] = storage.getTerrain(tx, tz);
+				}
+			}
+			prepared = true;
+		}
+		
+		private void thread() {
+			if(!prepared) {
+				throw new IllegalAccessError(this.toString()+"Not prepared");
+			}
+			addToThread();
+		}
+
+		@Override
+		protected boolean run() {
+			
+			for(int i=0, tx = playerChunk.getX()-worldVariables.terrainVariables.CHUNK_LOAD; tx<=playerChunk.getX()+worldVariables.terrainVariables.CHUNK_LOAD; tx++) {
+				for(int tz = playerChunk.getY()-worldVariables.terrainVariables.CHUNK_LOAD; tz<=playerChunk.getY()+worldVariables.terrainVariables.CHUNK_LOAD; tz++, i++) {
+					if(terrains[i]!=null) {
+						continue;
+					}
+					
+					Point position = new Point(tx,tz);
+					int ox = tx * (WorldVariables.TerrainVariables.VERTEX_COUNT-1);
+					int oz = tz * (WorldVariables.TerrainVariables.VERTEX_COUNT-1);
+					Vector2f offset = new Vector2f(ox-1, oz-1);
+					
+					Noise.Data noiseMap = Noise.generateNoiseMap(
+							WorldVariables.TerrainVariables.VERTEX_COUNT, WorldVariables.TerrainVariables.VERTEX_COUNT, 
+							worldVariables.terrainVariables.scale*worldVariables.styles.landHeight.getScale(), 
+							worldVariables.seed, 
+							worldVariables.terrainVariables.octaves, 
+							worldVariables.terrainVariables.persistance, 
+							worldVariables.terrainVariables.lacunarity, 
+							offset
+						);
+					
+					Height.Data heightMap = Height.generateHeightMap(noiseMap, worldVariables.styles.landHeight, worldVariables.styles.waterHeight);
+					worldVariables.styles.falloutHeight.fallout(heightMap, (int)offset.x, (int)offset.y);
+					Terrain t = new Terrain(heightMap, position);
+					terrains[i] = t;
+					storage.setTerrain(t.x, t.z, t);
+				}
+			}
+			
+			for(int k=0; k<terrains.length; k++) {
+				Terrain t = terrains[k];
+				
+				int xTest = t.x-playerChunk.getX();
+				int zTest = t.z-playerChunk.getY();
+				int cTest = worldVariables.terrainVariables.CHUNK_LOAD_SQR;
+				
+				int dist = xTest*xTest + zTest*zTest;
+				
+				
+				
+				if(dist>cTest) {
+					t.currentResolution=0;
+					continue;
+				}
+				
+				int resolution=worldVariables.terrainVariables.RESOLUTIONS[worldVariables.terrainVariables.RESOLUTIONS.length-1];
+				
+				for(int res : worldVariables.terrainVariables.RESOLUTIONS) {
+					if(dist<=res*res+1) {
+						resolution=res;
+						break;
+					}
+				}
+				
+				if(t.currentResolution!=resolution) {
+					int vertexCount = (WorldVariables.TerrainVariables.VERTEX_COUNT-1) / resolution + 1;
+					int count = vertexCount*vertexCount;
+					TerrainModelData data = new TerrainModelData(count, vertexCount, resolution);
+					
+					Vertex[][] vertexs = new Vertex[vertexCount+2][vertexCount+2];
+					
+					for(int i = -resolution, z = -1; z<vertexCount+1; i+=resolution, z++) {
+						for (int j = -resolution, x = -1; x<vertexCount+1; j+=resolution, x++) {
+							
+							float xpos = (float)x/((float)vertexCount-1)*WorldVariables.TerrainVariables.SIZE;
+							float zpos = (float)z/((float)vertexCount - 1) * WorldVariables.TerrainVariables.SIZE;
+							
+							boolean out = isVertexOutOfTerrain(j, i);
+							
+							float ypos = getTerrainVertexHeight(t, j, i, out);
+							
+							Vertex v = new Vertex(xpos, ypos, zpos, out);
+							v.texCoords.x = (float)x/((float)vertexCount - 1);
+							v.texCoords.y = (float)z/((float)vertexCount - 1);
+							
+							vertexs[z+1][x+1]=v;
+				
+						}
+					}
+					
+					ArrayList<Triangle> triangles = new ArrayList<Triangle>();
+					
+					for(int gz=0;gz<vertexCount+1;gz++){
+						for(int gx=0;gx<vertexCount+1;gx++){
+							
+							Vertex tl = vertexs[gz][gx];
+							Vertex tr = vertexs[gz][gx+1];
+							Vertex bl = vertexs[gz+1][gx];
+							Vertex br = vertexs[gz+1][gx+1];
+							
+							triangles.add(new Triangle(tl,bl,tr));
+							triangles.add(new Triangle(tr,bl,br));
+						}
+					}
+					
+					for(int i = 0; i<triangles.size(); i++) {
+						Triangle tri = triangles.get(i);
+						Vector3f triangleNormal = surfaceNormal(tri.a, tri.b, tri.c);
+						tri.addSurfaceNormal(triangleNormal);
+					}
+					for(Vertex[] vs : vertexs) {
+						for(Vertex v : vs) {
+							v.normal.normalise();
+						}
+					}
+					
+					int vertexPointer = 0;
+					for(int x = 0; x<vertexs.length; x++) {
+						for(int y = 0; y<vertexs[x].length; y++) {
+							
+							Vertex v = vertexs[x][y];
+							
+							if(v.out) {
+								continue;
+							}
+							
+							v.index=vertexPointer;
+							
+							data.vertices[vertexPointer*3]=v.x;
+							data.vertices[vertexPointer*3+1]=v.y;
+							data.vertices[vertexPointer*3+2]=v.z;
+							
+							data.textureCoords[vertexPointer*2]=v.texCoords.x;
+							data.textureCoords[vertexPointer*2+1]=v.texCoords.y;
+							
+							data.normals[vertexPointer*3]=v.normal.x;
+							data.normals[vertexPointer*3+1]=v.normal.y;
+							data.normals[vertexPointer*3+2]=v.normal.z;
+							
+							worldVariables.styles.environment.generateTexture(vertexs, x, y);
+							
+							data.textureColours[vertexPointer]=v.textureID;
+							
+							vertexPointer++;
+						}
+					}
+					
+					int pointer = 0;
+					for(Triangle tri : triangles) {
+						boolean out = tri.a.out || tri.b.out || tri.c.out;
+	
+						if(out) {
+							continue;
+						}
+						
+						data.indices[pointer++] = tri.a.index;
+						data.indices[pointer++] = tri.b.index;
+						data.indices[pointer++] = tri.c.index;
+					}
+					
+					models[k]=data;
+					
+				}	
+				
+			}
+			
+			return true;
+		}
+		
+		private void finish() {
+			
+			HashSet<Terrain> toBeRendered = new HashSet<Terrain>();
+			
+			for(int i=0; i<terrains.length; i++) {
+				
+				Terrain t = terrains[i];
+				if(t==null)continue;
+				
+				TerrainModelData m = models[i];
+				
+				if(m!=null) {
+					t.setModel(m);
+					t.currentResolution=m.resolution;
+				}
+				
+				if(t.currentResolution!=0)
+					toBeRendered.add(t);
+			}
+			
+			storage.renderTerrains(toBeRendered);
+		}
+		
+		private Vector3f surfaceNormal(Vertex a, Vertex b, Vertex c) {
+			Vector3f sideAB = Vector3f.sub(b, a, new Vector3f());
+			Vector3f sideAC = Vector3f.sub(c, a, new Vector3f());
+			
+			Vector3f cross = Vector3f.cross(sideAB, sideAC, new Vector3f());
+			return cross;
+		}
+		
+		private float getTerrainVertexHeight(Terrain t, int i, int j, boolean out) {
+			if(!out) {
+				return t.heights[i][j];
+			}
+			
+			System.out.print(i+" "+j+" | ");
+			
+			int tx = t.x;
+			int tz = t.z;
+			
+			if(i<0) {
+				tx--;
+				i+=WorldVariables.TerrainVariables.VERTEX_COUNT-1;
+			}else if(i>=WorldVariables.TerrainVariables.VERTEX_COUNT) {
+				tx++;
+				i-=WorldVariables.TerrainVariables.VERTEX_COUNT-1;
+			}
+			
+			if(j<0) {
+				tz--;
+				j+=WorldVariables.TerrainVariables.VERTEX_COUNT-1;
+			}else if(j>=WorldVariables.TerrainVariables.VERTEX_COUNT) {
+				tz++;
+				j-=WorldVariables.TerrainVariables.VERTEX_COUNT-1;
+			}
+			
+			Terrain t2 = storage.getTerrain(tx, tz);
+			if(t2 == null) {
+				return 0;
+			}else {
+				return t2.heights[i][j];
+			}
+			
+			
+		}
+		
+		private boolean isVertexOutOfTerrain(int i, int j) {
+			if(i>=0 && i<WorldVariables.TerrainVariables.VERTEX_COUNT && j>=0 && j<WorldVariables.TerrainVariables.VERTEX_COUNT) {
+				return false;
+			}
+			return true;
+		}
+		
+
+	}
+	
+	
+	static class Triangle{
+	
+		Vertex a, b, c;
+		
+		private Triangle(Vertex va, Vertex vb, Vertex vc) {
+			a=va; b=vb; c=vc;
+		}
+		
+		void addSurfaceNormal(Vector3f normal) {
+			Vector3f.add(a.normal, normal, a.normal);
+			Vector3f.add(b.normal, normal, b.normal);
+			Vector3f.add(c.normal, normal, c.normal);
+		}
+	}
+	
+	@SuppressWarnings("serial")
+	public static class Vertex extends Vector3f{
+		
+		public Vector3f normal = new Vector3f();
+		public Vector2f texCoords = new Vector2f();
+		public int textureID = Environment.TEX_FLAGS.NULL_TEX_FLAG;
+		
+		boolean out = false;
+		int index = -1;
+		
+		
+		private Vertex(float x, float y, float z, boolean index) {
+			super(x,y,z);
+			this.out=index;
+		}
+		
+	}
+	
+	
+	float getHeightOfVertex(int x, int z) {
+		
+		
+		int tx = Math.floorDiv(x, WorldVariables.TerrainVariables.VERTEX_COUNT-1);
+		int tz = Math.floorDiv(z, WorldVariables.TerrainVariables.VERTEX_COUNT-1);
+		
+		Terrain terrain = storage.getTerrain(tx, tz);
+		if(terrain==null)return 0;
+		
+		int fx = x % (WorldVariables.TerrainVariables.VERTEX_COUNT-1);
+		int fz = z % (WorldVariables.TerrainVariables.VERTEX_COUNT-1);
+		
+		if(fx<0)fx=(WorldVariables.TerrainVariables.VERTEX_COUNT-1)+fx;
+		if(fz<0)fz=(WorldVariables.TerrainVariables.VERTEX_COUNT-1)+fz;
+		
+		
+		float height = terrain.heights[fx][fz];
+		
+		return height;
+	}
+	
+	
+	public class TerrainHeightFinder{
+		
+		public float getHeight(Vector3f pos) {
+			int tx = (int) Math.floor(pos.x / WorldVariables.TerrainVariables.SIZE);
+			int tz = (int) Math.floor(pos.z / WorldVariables.TerrainVariables.SIZE);
+			
+			Terrain terrain = storage.getTerrain(tx, tz);
+			if(terrain==null)return 0;
+			
+			float fx = pos.x % WorldVariables.TerrainVariables.SIZE;
+			float fz = pos.z % WorldVariables.TerrainVariables.SIZE;
+			
+			if(fx<0)fx=WorldVariables.TerrainVariables.SIZE+fx;
+			if(fz<0)fz=WorldVariables.TerrainVariables.SIZE+fz;
+			
+			return terrain.getHeightOfTerrain(fx, fz);
+		}
+	}
+
+}

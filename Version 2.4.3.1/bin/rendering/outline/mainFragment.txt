@@ -1,0 +1,25 @@
+#version 140
+
+in vec2 textureCoords[5];
+
+out vec4 out_Colour;
+
+uniform sampler2D colourTexture;
+
+void main(void){
+	
+	bool a = false;
+	
+	for(int i=1; i<5; i++){
+		if(texture(colourTexture, textureCoords[i]).a<0.5){
+			a = true;
+			break;
+		}
+	}
+	
+	if(a && texture(colourTexture, textureCoords[0]).a>0.5){
+		out_Colour = vec4(0.0,1.0,0.0,1.0);
+	}else{
+		out_Colour = vec4(0.0);
+	}
+}

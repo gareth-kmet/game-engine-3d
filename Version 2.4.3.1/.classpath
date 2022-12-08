@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="main loop"/>
+	<classpathentry kind="src" path="rendering"/>
+	<classpathentry kind="src" path="game"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="RES FOLDER/libs/natives"/>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/RES FOLDER/libs/jars/lwjgl_util.jar"/>
+	<classpathentry kind="lib" path="/RES FOLDER/libs/jars/lwjgl.jar"/>
+	<classpathentry kind="lib" path="/RES FOLDER/libs/jars/PNGDecoder.jar"/>
+	<classpathentry kind="lib" path="/RES FOLDER/libs/jars/slick-util.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

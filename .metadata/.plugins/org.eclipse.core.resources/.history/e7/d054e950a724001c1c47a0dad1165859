@@ -1,0 +1,5 @@
+package rendering.skybox;
+
+public enum SkyBoxVariables {
+
+}

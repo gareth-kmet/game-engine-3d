@@ -1,0 +1,30 @@
+package game.world;
+
+import java.util.Random;
+
+public class WorldRandomStyles {
+	
+	private Random random = new Random();
+	
+	public enum Styles implements WorldStyles{
+		LAND_HEIGHT {
+			@Override
+			public WorldStyles getRandomizedStyle(Styles styles) {b
+				return ;
+			}
+		},
+		WATER_DEPTH,
+		;
+
+		@Override
+		public abstract WorldStyles getRandomizedStyle(Styles styles);
+	
+	}
+	
+	public static interface WorldStyles{
+		
+		public WorldStyles getRandomizedStyle(Styles styles);
+		
+	}
+
+}

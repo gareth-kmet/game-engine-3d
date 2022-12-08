@@ -1,0 +1,192 @@
+package ai.game;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import org.lwjgl.util.Point;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import ai.AILoader;
+import ai.astar.AStar;
+import ai.astar.AStar.AStarEffect;
+import ai.astar.AStar.AStarResult;
+import ai.astar.AStarGrid;
+import ai.astar.AStarGrid.AStarGridAffectingObject.NodeValue;
+import ai.astar.Node;
+import ai.astar.Path;
+import entities.Entity;
+import game.world.WorldChunk;
+import game.world.WorldVariables;
+import game.world.environment.EnvironmentChunk;
+import game.world.environment.EnvironmentStorage;
+import game.world.gameObjects.entities.movables.GeniusGameEntity.Intelligence;
+import game.world.gameObjects.entities.movables.IntelligentGameEntity;
+import mainLoop.DisplayManager;
+import physics.collisions.PhysicsMovement;
+import toolbox.Maths;
+
+public class GameAStarTools {
+
+	public static class NodeEntity extends Entity{public NodeEntity() {super(null, 0, null, 0, 0, 0, 1);}}
+
+	public static final Entity NODE_ENTITY = new GameAStarTools.NodeEntity();
+	
+	public final static class AStarRequest extends AILoader.Request{
+		
+		private final AStarGrid[][] astarGrids;
+		private final HashSet<NeedAStarGridCreation> needCreations;
+		private final HashMap<Point, Collection<NodeValue>> outofboundsAStarEffects;
+		private final Vector3f startPos,targetPos;
+		
+		private AStarResult result = null;
+		
+		public AStarRequest(EnvironmentStorage chunks, Vector3f startPos, Vector3f targetPos, GRID_COMBINATION_TYPE gridType, AILoader aiLoader) {
+			Point startPosChunkPoint = WorldChunk.getChunk(startPos);
+			Point targetPosChunkPoint = WorldChunk.getChunk(targetPos);
+			
+			int minXChunk = Math.min(startPosChunkPoint.getX(), targetPosChunkPoint.getX());
+			int maxXChunk = Math.max(startPosChunkPoint.getX(), targetPosChunkPoint.getX());
+			int minYChunk = Math.min(startPosChunkPoint.getY(), targetPosChunkPoint.getY());
+			int maxYChunk = Math.max(startPosChunkPoint.getY(), targetPosChunkPoint.getY());
+			needCreations=new HashSet<NeedAStarGridCreation>();
+			outofboundsAStarEffects = new HashMap<Point, Collection<NodeValue>>();
+			astarGrids=switch(gridType){
+				case SMALL -> makeSmallGrid(chunks, minXChunk, maxXChunk, minYChunk, maxYChunk);
+				case MEDIUM_CONDITIONAL ->{
+					yield makeMediumGrid(chunks, minXChunk, maxXChunk, minYChunk, maxYChunk, startPos, targetPos);
+				}
+				case LARGE -> makeSmallGrid(chunks, minXChunk-1, maxXChunk+1, minYChunk-1, maxYChunk+1);
+				
+			};
+			this.targetPos=targetPos;
+			this.startPos=startPos;
+			
+			addToThread(aiLoader);
+		}
+		
+		public enum GRID_COMBINATION_TYPE{SMALL,MEDIUM_CONDITIONAL,LARGE}
+		
+		private AStarGrid[][] makeBigGrid(EnvironmentStorage chunks, int minX, int maxX, int minY, int maxY){
+			minX-=1;maxX+=1;
+			minY-=1;maxY+=1;
+			return makeSmallGrid(chunks, minX, maxX, minY, maxY);
+		}
+		
+		private AStarGrid[][] makeSmallGrid(EnvironmentStorage chunks, int minX, int maxX, int minY, int maxY){
+			AStarGrid[][] grids = new AStarGrid[maxX-minX+1][maxY-minY+1];
+			for(int i=0, cx=minX; cx<=maxX; i++, cx++) for(int j=0, cy=minY; cy<=maxY; j++,cy++) {
+				EnvironmentChunk chunk = chunks.getChunk(cx, cy);
+				if(chunk!=null) {
+					grids[i][j]=chunk.getAStarGrid();
+					outofboundsAStarEffects.put(new Point(i,j), chunk.getOutofboundsValues());
+				}else {
+					needCreations.add(new NeedAStarGridCreation(i,j,cx,cy));
+				}
+			}
+			return grids;
+		}
+		
+		private AStarGrid[][] makeMediumGrid(EnvironmentStorage chunks, int minX, int maxX, int minY, int maxY, Vector3f startPos, Vector3f targetPos){
+			return makeBigGrid(chunks, minX, maxX, minY, maxY);
+		}
+
+		@Override
+		protected boolean run() {
+			for(NeedAStarGridCreation needs : needCreations) {
+				astarGrids[needs.i][needs.j] = WorldChunk.newAStarGrid(needs.cx, needs.cy).fillAllWithEffect(AStarEffect.ASTAR_COLLISION_VALUE);
+			}
+			AStarGrid totalGrid;
+//			if(astarGrids.length==1 && astarGrids[0].length==1) {
+//				totalGrid = astarGrids[0][0];
+//			}else {
+				totalGrid = AStarGrid.combineGridsWithStrandedNodeValues(astarGrids, outofboundsAStarEffects).blurPenalty(AStarGrid.DEFAULT_BLUR_SIZE);
+//			}
+			
+			Vector3f topLeftNodeWorldPos = totalGrid.nodes()[0][0].worldPos;
+			int s_dx = (int)(startPos.x - topLeftNodeWorldPos.x);
+			int s_dz = (int)(startPos.z - topLeftNodeWorldPos.z);
+			Node startNode = totalGrid.nodes()[s_dx][s_dz];
+			int t_dx = (int)(targetPos.x - topLeftNodeWorldPos.x);
+			int t_dz = (int)(targetPos.z - topLeftNodeWorldPos.z);
+			Node targetNode = totalGrid.nodes()[t_dx][t_dz];
+			
+			AStarResult astarResult = AStar.run(totalGrid.nodes(), startNode, targetNode, null);
+			result=astarResult;
+			return true;
+		}
+		 
+		public AStarResult getResult() {
+			return result;
+		}
+		
+		private record NeedAStarGridCreation(int i, int j, int cx, int cy) {}
+			
+	}
+	
+	public static class AStarFollower extends Intelligence{
+		
+		protected AStarRequest request;
+		protected AStarResult result;
+		protected Path path;
+		private int pathIndex=0;
+		
+		private final float speed;
+		private final float turnDist;
+		private final float turnSpeed;
+		
+		public AStarFollower(AStarRequest request, IntelligentGameEntity thisEntity, float speed) {
+			super(thisEntity);
+			this.speed=speed;
+			turnDist = 0.25f*speed;
+			turnSpeed = 0.15f*speed;
+			this.request=request;
+		}
+	
+		@Override
+		public void decide(WorldVariables worldVariables) {
+			if(completed||useless) {return;}
+			
+			thisEntity.getPhysicsMovement().setXzSpeedDistance(speed);
+			final float deltaTime = DisplayManager.getFrameTimeSeconds();
+			
+			Vector2f pos2D = Maths.toVector2f(thisEntity.getPosition());
+			while(path.turnBoundaries[pathIndex].hasCrossedline(pos2D)) {
+				if(pathIndex==path.finishLineIndex) {
+					completed=true;
+					thisEntity.getPhysicsMovement().setXzSpeedDistance(0);
+					break;
+				}else {
+					pathIndex++;
+				}
+			}
+			
+			if(!completed) {
+				float currentYRot = (float) Math.toRadians(thisEntity.getRotation().y);
+				float yRot = Maths.lerpRotation(pos2D, Maths.toVector2f(path.lookPoints[pathIndex]),deltaTime*turnSpeed,currentYRot);
+				PhysicsMovement p = thisEntity.getPhysicsMovement();
+				float dyRot = yRot-currentYRot;
+				p.setXzMovementRotation((float) Math.toDegrees(dyRot));
+			}
+			
+		}
+	
+		@Override
+		protected void load(WorldVariables worldVariables) {
+			if(request.isComplete()) {
+				loaded=true;
+				result=request.getResult();
+				path=new Path(result.waypoints(), new Vector3f(thisEntity.getPosition()), turnDist);
+				if(!result.success()) {
+					useless=true;
+					completed=true;
+				}
+			}
+			
+		}
+}
+
+
+}
+

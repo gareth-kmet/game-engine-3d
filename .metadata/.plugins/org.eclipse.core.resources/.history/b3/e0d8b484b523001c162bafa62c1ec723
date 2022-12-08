@@ -1,0 +1,75 @@
+package game.world.terrain;
+
+import rendering.water.WaterRenderer;
+
+public enum TerrainVariables {;
+	
+	public static int 
+		scale = 25,
+		octaves=4,
+		vertex = 256;
+	public static float
+		persistance=0.25f,
+		lacunarity=2.0f;	
+	
+	
+	public enum Regions{
+		WATER(0.2f, 0.2f, 0.7f) {
+			@Override
+			protected boolean inBounds(float height) {
+				return height<=WaterRenderer.WATER_HEIGHT;
+			}
+		},
+		LAND(0.2f, 0.7f, 0.1f) {
+			@Override
+			protected boolean inBounds(float height) {
+				return height>WaterRenderer.WATER_HEIGHT && height<WaterRenderer.WATER_HEIGHT+20;
+			}
+		},
+		FOREST(0.1f, 0.3f, 0.0f) {
+			@Override
+			protected boolean inBounds(float height) {
+				return height>=WaterRenderer.WATER_HEIGHT+20 && height<WaterRenderer.WATER_HEIGHT+40;
+			}
+		},
+		STONE(0.5f,0.5f,0.5f){
+			@Override
+			protected boolean inBounds(float height) {
+				return height>=WaterRenderer.WATER_HEIGHT+40 && height<WaterRenderer.WATER_HEIGHT+60;
+			}
+		},
+		SNOW(1f,1f,1f){
+			@Override
+			protected boolean inBounds(float height) {
+				return height>=WaterRenderer.WATER_HEIGHT+60;
+			}
+		},
+		
+		;
+		
+		public float r,g,b;
+		
+		Regions(float r, float g, float b){
+			this.r=r; this.b=b; this.g=g;
+		}
+		
+		public static Regions getRegion(float height) {
+			for(Regions region : values()) {
+				if(region.inBounds(height)) {
+					return region;
+				}
+			}
+			return null;
+		}
+		
+		public static void loadColour(Regions region, float[] colours, int vertexPointer) {
+			colours[vertexPointer*3] = region.r;
+			colours[vertexPointer*3+1] = region.g;
+			colours[vertexPointer*3+2] = region.b;
+		}
+		
+		protected abstract boolean inBounds(float height);
+		
+	}
+
+}

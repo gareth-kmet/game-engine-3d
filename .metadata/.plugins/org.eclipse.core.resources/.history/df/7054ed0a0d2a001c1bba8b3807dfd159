@@ -1,0 +1,64 @@
+package game.world.environment.styles;
+
+import java.util.Random;
+
+import org.lwjgl.opengl.GL13;
+
+import game.world.WorldRandomStyles;
+import game.world.terrain.TerrainModelData;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+import rendering.loaders.Loader;
+import rendering.loaders.Loader.TEX;
+
+public enum EnvironmentStyles implements WorldRandomStyles, Environment{
+	
+	NORMAL(new NormalEnvironment());
+	
+	;
+	
+	
+	private final Environment environment;
+	
+	private EnvironmentStyles(Environment e) {
+		environment=e;
+	}
+	
+	public static EnvironmentStyles getRandomizedStyle(Random random, LandHeightStyles landStyle, WaterHeightStyles waterStyle, FalloutHeightStyles falloutStyle) {
+		return values()[0];
+	}
+	
+	public static void init(Loader loader) {
+		for(EnvironmentStyles style : values()) {
+			style.init(loader);
+		}
+	}
+	
+	public Environment getEnvironment() {
+		return environment;
+	}
+
+	@Override
+	public void findTextures(TerrainModelData terrain) {
+		environment.findTextures(terrain);
+		
+	}
+
+	@Override
+	public TEX[] getTextures() {
+		return environment.getTextures();
+	}
+
+	@Override
+	public String[] getTextureLocations() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void init(Loader loader) {
+		environment.init(loader);
+	}
+
+}

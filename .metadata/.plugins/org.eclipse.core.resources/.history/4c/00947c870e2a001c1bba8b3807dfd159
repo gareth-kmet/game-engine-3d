@@ -1,0 +1,35 @@
+package game.world.environment.styles;
+
+import game.world.terrain.TerrainModelData;
+import rendering.loaders.Loader;
+import rendering.loaders.Loader.TEX;
+
+public class NormalEnvironment implements Environment {
+	
+	protected static final String[] TEXTURE_LOCATIONS = {
+			"res/mud",
+	};
+	
+	protected Loader.TEX[] textures = null;
+	
+	@Override
+	public void generateTextureVBO(TerrainModelData terrain) {
+		
+
+	}
+
+	@Override
+	public TEX[] getTextures() {
+		return textures;
+	}
+	@Override
+	public String[] getTextureLocations() {
+		return TEXTURE_LOCATIONS;
+	}
+
+	@Override
+	public void init(Loader loader) {
+		textures = Environment.loadTextures(this, loader);
+	}
+
+}

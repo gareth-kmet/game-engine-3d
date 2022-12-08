@@ -1,0 +1,39 @@
+package game.world;
+
+import java.util.Random;
+
+import game.world.environment.styles.EnvironmentStyles;
+import game.world.terrain.heights.FalloutHeightStyles;
+import game.world.terrain.heights.LandHeightStyles;
+import game.world.terrain.heights.WaterHeightStyles;
+
+public interface WorldRandomStyles {
+	
+	public static final byte 
+		LAND_HEIGHT_STYLE					= 0b000001,
+		WATER_HEIGHT_STYLE					= 0b000010,
+		FALLOUT_STYLE						= 0b000100,
+		EVIRONMENT_STYLE					= 0b001000;
+	
+	public static WorldRandomStyles getStyle(WorldRandomStyles[] styles, byte style) {
+		switch(style) {
+			case LAND_HEIGHT_STYLE: return styles[0];
+			case WATER_HEIGHT_STYLE: return styles[1];
+			case FALLOUT_STYLE: return styles[2];
+			case EVIRONMENT_STYLE: return styles[3];
+			default: return null;
+		}
+	}
+	
+	public static WorldRandomStyles[] getRandomStyles(Random random) {
+		
+		WorldRandomStyles[] styles = new WorldRandomStyles[3];
+		
+		styles[0] = LandHeightStyles.getRandomizedStyle(random);
+		styles[1] = WaterHeightStyles.getRandomizedStyle(random, styles[0]);
+		styles[2] = FalloutHeightStyles.getRandomizedStyle(random, styles[0], styles[1]);
+		styles[3] = EnvironmentStyles.getRandomizedStyle(random, styles[0], styles[1], styles[2]);
+		
+	}
+
+}

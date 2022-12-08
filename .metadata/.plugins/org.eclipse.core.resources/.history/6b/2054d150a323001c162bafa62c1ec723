@@ -1,0 +1,14 @@
+package rendering.loaders;
+
+public enum LoaderStorage {;
+	
+	public class VAO{
+		public int id;
+		public ArrayList<VBO> vbos;
+	}
+	
+	public class VBO{
+		public int id;
+	}
+
+}

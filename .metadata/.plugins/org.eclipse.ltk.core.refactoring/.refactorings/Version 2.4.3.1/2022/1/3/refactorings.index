@@ -1,0 +1,20 @@
+1641707132302	Rename method 'getGrid'
+1641709814505	Rename local variable 'c'
+1641864024403	Rename method 'loadEntities'
+1641868770479	Move member 'ASTAR_COLLISION_VALUE'
+1641950184017	Rename method 'getRotatedMovement'
+1641950201176	Rename method 'getRotatedRadianMovement'
+1642004155373	Move type
+1642004196396	Move member 'NODE_ENTITY'
+1642004204524	Move member 'NodeEntity'
+1642004990149	Rename field 'wayPoints'
+1642005411408	Rename field 'path'
+1642041490138	Move member 'Intelligence'
+1642041494870	Delete element
+1642053112628	Delete elements
+1642120799470	Rename resource 'terrainVertexShader.txt'
+1642120816664	Rename resource 'terrainFragmentShader.txt'
+1642199481792	Rename type 'AfraidIntelligence'
+1642200967424	Change method 'doMindset'
+1642201071073	Change method 'doMindset'
+1642226889530	Rename method 'doMindset'

@@ -1,0 +1,40 @@
+package mainLoop.main;
+
+import mainLoop.LoopManager;
+import rendering.RenderConditions;
+
+public class MainManager implements LoopManager{
+
+	@Override
+	public boolean create() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void loopStep() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean loopBoolean() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void cleanUp() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public RenderConditions[] getConditions() {
+		// TODO Auto-generated method stub
+		return new RenderConditions[0];
+	}
+	
+	
+
+}

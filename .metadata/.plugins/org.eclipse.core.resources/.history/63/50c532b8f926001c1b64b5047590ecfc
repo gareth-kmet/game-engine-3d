@@ -1,0 +1,36 @@
+package game.world.terrain.heights;
+
+import java.util.Random;
+
+public enum FalloutHeightStyles {
+	
+	TEST(){
+
+		@Override
+		public float calcHeight(float x) {
+			return 1f/(10f*(x-0.3f)*(x-0.3f))-10f/9f;
+		}
+		
+	}
+	
+	
+	;
+	
+	protected abstract float calcFallout(float dist);
+	
+	void fallout(Height.Data data, Point chunkLocation) {
+		
+		float[][] map = data.getMap();
+		
+		for(int x=0; x<map.length; x++) {
+			for(int z=0; z<map[x].length; z++) {
+				
+			}
+		}
+	}
+
+	public static FalloutHeightStyles getRandomizedStyle(final Random random, final LandHeightStyles landStyle, final WaterHeightStyles waterStyle) {
+		return values()[0];
+	}
+	
+}

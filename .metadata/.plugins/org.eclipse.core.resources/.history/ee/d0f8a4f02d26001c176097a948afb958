@@ -1,0 +1,11 @@
+package game.world.terrain;
+
+import game.world.WorldRandomStyles;
+
+public class TerrainRandomStyle extends WorldRandomStyles{
+	
+	
+	
+	public enum{
+
+}

@@ -1,0 +1,24 @@
+package game.world.terrain;
+
+import org.lwjgl.util.vector.Vector3f;
+
+public abstract class Normals {
+	
+	
+	public static void generateNormals(Terrain t, TerrainModelData data, TerrainGenerator terrains) {
+		
+		int triangleCount = data.indices.length / 3;
+		
+		for(int i = 0; i<triangleCount; i++) {
+			
+			int triangleIndex = i*3;
+			int vertexIndexA = data.indices[triangleIndex];
+			int vertexIndexB = data.indices[triangleIndex+1];
+			int vertexIndexC = data.indices[triangleIndex+2];
+			
+			
+		}
+	}
+	
+
+}

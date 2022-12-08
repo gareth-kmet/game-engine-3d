@@ -1,0 +1,10 @@
+LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/arch=x86_64
+LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/name=Local
+LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/os=win32
+configDescList=org.eclipse.launchbar.core.descriptorType.default\:AnimationApp (1),org.eclipse.launchbar.core.descriptorType.default\:AnimationApp (2),org.eclipse.launchbar.core.descriptorType.default\:AnimationApp,org.eclipse.launchbar.core.descriptorType.default\:CacheLineSize,org.eclipse.launchbar.core.descriptorType.default\:Frame,org.eclipse.launchbar.core.descriptorType.default\:Main,org.eclipse.launchbar.core.descriptorType.default\:MainGameLoop (1),org.eclipse.launchbar.core.descriptorType.default\:MainGameLoop (2),org.eclipse.launchbar.core.descriptorType.default\:MainGameLoop (3),org.eclipse.launchbar.core.descriptorType.default\:MainGameLoop,org.eclipse.launchbar.core.descriptorType.default\:MainLoop (1),org.eclipse.launchbar.core.descriptorType.default\:MainLoop (3),org.eclipse.launchbar.core.descriptorType.default\:MainLoop,org.eclipse.launchbar.core.descriptorType.default\:MainManager,org.eclipse.launchbar.core.descriptorType.default\:Main_A,org.eclipse.launchbar.core.descriptorType.default\:Main_B,org.eclipse.launchbar.core.descriptorType.default\:Sqrt,org.eclipse.launchbar.core.descriptorType.default\:WordMatchTest,org.eclipse.launchbar.core.descriptorType.default\:MainLoop (2)
+eclipse.preferences.version=1
+org.eclipse.launchbar.core.descriptorType.default\:AnimationApp\ (1)/activeLaunchMode=run
+org.eclipse.launchbar.core.descriptorType.default\:AnimationApp\ (1)/activeLaunchTarget=org.eclipse.launchbar.core.launchTargetType.local\:Local
+org.eclipse.launchbar.core.descriptorType.default\:CacheLineSize/activeLaunchMode=run
+org.eclipse.launchbar.core.descriptorType.default\:CacheLineSize/activeLaunchTarget=org.eclipse.launchbar.core.launchTargetType.local\:Local
+org.eclipse.launchbar.core.descriptorType.default\:MainLoop\ (2)/activeLaunchMode=run

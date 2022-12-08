@@ -1,0 +1,13 @@
+package game.world.terrain.heights;
+
+import game.world.terrain.TerrainModelData;
+
+public abstract class Normals {
+	
+	
+	public static void generateNormals(TerrainModelData data) {
+		
+	}
+	
+
+}

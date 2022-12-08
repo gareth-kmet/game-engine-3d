@@ -1,0 +1,192 @@
+package toolbox;
+
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+
+import entities.Camera;
+
+public class Maths {
+	
+	public static float barycentricHeight(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f pos) {
+		Vector3f w = barycentricWeights(toVector2f(p1), toVector2f(p2), toVector2f(p3), pos);
+		return w.x * p1.y + w.y * p2.y + w.z * p3.y;
+//		return barycentricHeightsOld(p1, p2, p3, pos);
+		
+	}
+	
+	public static Vector3f barycentricWeights(Vector2f p1, Vector2f p2, Vector2f p3, Vector2f pos) {
+		float det_inverse = 1f/	(	(p2.y - p3.y) * (p1.x - p3.x)  + (p3.x - p2.x) * (p1.y - p3.y));
+		float l1 = 				( 	(p2.y - p3.y) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.y)) * det_inverse;
+		float l2 = 				(	(p3.y - p1.y) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.y)) * det_inverse;
+		float l3 = 1.0f - l1 - l2;
+		return new Vector3f(l1,l2,l3);
+	}
+	
+	@Deprecated
+	public static float barycentricHeightsOld(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f pos) {
+		float det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
+		float l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det;
+		float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
+		float l3 = 1.0f - l1 - l2;
+		return l1 * p1.y + l2 * p2.y + l3 * p3.y;
+	}
+	
+	
+	public static Vector3f barycentricWeights(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f f) {
+		Vector3f f1 = Vector3f.sub(p1, f, null);
+		Vector3f f2 = Vector3f.sub(p2, f, null);
+		Vector3f f3 = Vector3f.sub(p3, f, null);
+		
+		float a_inverse = invSqrt(Vector3f.cross(Vector3f.sub(p1, p2, null), Vector3f.sub(p1, p3, null), null).lengthSquared());
+		float a1 = Vector3f.cross(f2, f3, null).length() * a_inverse;
+		float a2 = Vector3f.cross(f3, f1, null).length() * a_inverse;
+		float a3 = Vector3f.cross(f1, f2, null).length() * a_inverse;
+		return new Vector3f(a1,a2,a3);
+	}
+	
+	@Deprecated
+	public static Vector3f barycentricWeights2D_expensive(Vector2f pA, Vector2f pB, Vector2f pC, Vector2f f) {
+		float fA_length = Vector2f.sub(f, pA, null).length();
+		float fB_length = Vector2f.sub(f, pB, null).length();
+		float fC_length = Vector2f.sub(f, pC, null).length();
+		
+		float a_inverse = invSqrt(Vector2f.sub(pA, pB, null).lengthSquared() * Vector2f.sub(pA, pC, null).lengthSquared());
+		float a1 = fB_length * fC_length * a_inverse;
+		float a2 = fA_length * fC_length * a_inverse;
+		float a3 = fA_length * fB_length * a_inverse;
+		return new Vector3f(a1,a2,a3);
+	}
+	
+//	This is the smallest of fraction possible faster, so nothing, but im keeping it
+	public static float invSqrt(float x) {
+		final float xHalf = 0.5f * x;
+		int i = Float.floatToIntBits(x);
+		i = 0x5f375a86 - (i>>1);
+		x = Float.intBitsToFloat(i);
+		x *= (1.5f - xHalf * x * x);
+		return x;
+	}
+	
+	/**
+	 * ax+by+cz+d=0
+	 */
+	public static Vector4f planeEquation(Vector3f pA, Vector3f pB, Vector3f pC) {
+		Vector3f abc = planeNormal(pA,pB,pC);
+		float d = -Vector3f.dot(abc, pA);
+		Vector4f abcd = new Vector4f(abc.x, abc.y, abc.z, d);
+		return abcd;
+	}
+	
+	public static Vector3f planeNormal(Vector3f pA, Vector3f pB, Vector3f pC) {
+		Vector3f vAB = Vector3f.sub(pB, pA, null);
+		Vector3f vAC = Vector3f.sub(pC, pA, null);
+		Vector3f abc = Vector3f.cross(vAB, vAC, null);
+		return abc;
+	}
+	
+	public static Matrix4f createTransformationMatrix(Vector3f translation, float rx, float ry, float rz, float scale) {
+		Matrix4f matrix = new Matrix4f();
+		matrix.setIdentity();
+		Matrix4f.translate(translation, matrix, matrix);
+		Matrix4f.rotate((float) Math.toRadians(rx), new Vector3f(1,0,0), matrix, matrix);
+		Matrix4f.rotate((float) Math.toRadians(ry), new Vector3f(0,1,0), matrix, matrix);
+		Matrix4f.rotate((float) Math.toRadians(rz), new Vector3f(0,0,1), matrix, matrix);
+		Matrix4f.scale(new Vector3f(scale,scale,scale), matrix, matrix);
+		return matrix;
+	}
+	
+	public static Matrix4f createViewMatrix(Camera camera) {
+		Matrix4f viewMatrix = new Matrix4f();
+		viewMatrix.setIdentity();
+		Matrix4f.rotate((float)Math.toRadians(camera.getPitch()), new Vector3f(1,0,0), viewMatrix, viewMatrix);
+		Matrix4f.rotate((float)Math.toRadians(camera.getYaw()), new Vector3f(0,1,0), viewMatrix, viewMatrix);
+		Matrix4f.rotate((float)Math.toRadians(camera.getRoll()), new Vector3f(0,0,1), viewMatrix, viewMatrix);
+		Vector3f cameraPos = camera.getPosition();
+		Vector3f negativeCameraPos = new Vector3f(-cameraPos.x,-cameraPos.y,-cameraPos.z);
+		Matrix4f.translate(negativeCameraPos, viewMatrix, viewMatrix);
+		return viewMatrix;
+	}
+	
+	public static Matrix4f createTransformationMatrix(Vector2f translation, Vector2f scale) {
+		Matrix4f matrix = new Matrix4f();
+		matrix.setIdentity();
+		Matrix4f.translate(translation, matrix, matrix);
+		Matrix4f.scale(new Vector3f(scale.x, scale.y, 1f), matrix, matrix);
+		return matrix;
+	}
+	
+	public static float max(boolean absolute, float...fs) {
+		float max = Float.NEGATIVE_INFINITY;
+		for(float f : fs) {
+			if(absolute)f=Math.abs(f);
+			if(f>max)max=f;
+		}
+		return max;
+	}
+	public static float min(boolean absolute, float...fs) {
+		float min = Float.POSITIVE_INFINITY;
+		for(float f : fs) {
+			if(absolute)f=Math.abs(f);
+			if(f<min)min=f;
+		}
+		return min;
+	}
+	public static float average(boolean absolute, float...fs) {
+		float average = 0f;
+		for(float f:fs) {
+			if(absolute)f=Math.abs(f);
+			average+=f;
+		}
+		return average / fs.length;
+	}
+	public static float sqr(float a) {
+		return a*a;
+	}
+	public static double sin(double theta) {
+		return Math.sin(Math.toRadians(theta));
+	}
+	public static double cos(double theta) {
+		return Math.cos(Math.toRadians(theta));
+	}
+	public static int clamp(int value, int bottom, int top) {
+		return Math.max(bottom, Math.min(top, value));
+	}
+	public static Vector2f getRotatedMovementFromDegrees(float distance, float rotation) {
+		float dx = (float) (distance * Math.sin(Math.toRadians(rotation)));
+		float dz = (float) (distance * Math.cos(Math.toRadians(rotation)));
+		return new Vector2f(dx,dz);
+	}
+	
+	public static float getRotationInDegrees(float dx, float dz) {
+		return (float) Math.toDegrees(Math.atan2(dx, dz));
+	}
+	
+	public static Vector2f toVector2f(Vector3f vector) {
+		return new Vector2f(vector.x, vector.z);
+	}
+	
+	public static Vector3f toVector3f(Vector2f vector) {
+		return new Vector3f(vector.x, 0, vector.y);
+	}
+	
+	public static float lerpRotation(Vector2f currentPos, Vector2f nextPos, float lerpFactor, float yRot) {
+		Vector2f desiredDirection = Vector2f.sub(nextPos, currentPos, null);
+		desiredDirection.normalise();
+		Vector2f currentDirection = new Vector2f((float)Math.sin(yRot), (float)Math.cos(yRot));
+		Vector2f lerpedDirection = lerpDirectionVector(currentDirection, desiredDirection, lerpFactor);
+		float angle = (float) Math.atan2(lerpedDirection.x, lerpedDirection.y);
+		return angle;
+	}
+	
+	public static float lerp(float a, float b, float t) {
+		return a+(b-a)*t;
+	}
+	
+	public static Vector2f lerpDirectionVector(Vector2f a, Vector2f b, float t) {
+		Vector2f b_a_scalet = Vector2f.sub(b, a, null);
+		b_a_scalet.scale(t);
+		return Vector2f.add(a, b_a_scalet, null);
+	}
+}

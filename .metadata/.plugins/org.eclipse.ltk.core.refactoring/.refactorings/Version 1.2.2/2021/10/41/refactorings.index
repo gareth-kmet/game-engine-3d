@@ -1,0 +1,37 @@
+1633227160627	Rename field 'VERTEX'
+1633234513021	Rename type 'Texture'
+1633314773771	Rename type 'NoiseStorage'
+1633314780938	Rename type 'Storage'
+1633315535810	Move member 'WATER_HEIGHT'
+1633315604301	Move member 'WATER_HEIGHT'
+1633315663378	Rename field 'WATER_HEIGHT'
+1633315668879	Rename field 'WATER_LAND_DIFFERENCE'
+1633315679329	Rename field 'TERRAINS'
+1633462623990	Delete element
+1633462630257	Move compilation unit
+1633462633564	Move compilation unit
+1633462677566	Move compilation units
+1633462683087	Delete element
+1633473450401	Rename type 'WorldEnvironmentType'
+1633473563364	Rename type 'RandomType'
+1633473574558	Rename type 'WorldRandomType'
+1633473814397	Rename type 'HeightStyles'
+1633473929447	Delete element
+1633474381964	Delete element
+1633475036289	Move compilation unit
+1633475039035	Delete element
+1633475416047	Delete element
+1633475419197	Delete element
+1633476663015	Delete element
+1633477042183	Delete element
+1633477073792	Move compilation unit
+1633477078160	Move compilation unit
+1633477088510	Move compilation unit
+1633477091662	Move compilation unit
+1633477328871	Rename type 'HeightStyle'
+1633477388951	Delete element
+1633477661503	Encapsulate field 'map'
+1633631488515	Delete element
+1633632394517	Delete element
+1633730010432	Move compilation unit
+1633736086664	Delete elements
